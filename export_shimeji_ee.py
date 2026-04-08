@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src', 'shimeji
 FRAMES_DIR  = os.path.join(os.path.dirname(__file__), 'frames')
 OUT_DIR     = os.path.join(os.path.dirname(__file__), 'output')
 MASCOT_NAME = 'Zhizhiji'
-IMG_W, IMG_H = 160, 160            # 统一画布尺寸
+IMG_W, IMG_H = 113, 128
 ANCHOR_X    = IMG_W // 2
 ANCHOR_Y    = IMG_H
 WALK_VX     = 3
