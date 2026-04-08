@@ -1,144 +1,135 @@
 """
-从单张卡通图生成 Shimeji 帧序列
-原理：去白底 → 裁剪 → 缩放 → 通过镜像/轻微变形生成多帧
+从多张卡通图生成 Shimeji 帧序列
+
+素材：
+  raw/zhizhi走路.jpg   → walk_left / walk_right / fall / drag 帧
+  raw/zhizhi趴着.jpg   → idle（趴着待机）帧
+
+所有帧统一放在 frames/ 目录，采用固定画布尺寸，锚点统一。
 """
 
-from PIL import Image, ImageFilter, ImageChops, ImageEnhance
+from PIL import Image
 import numpy as np
 import os
 
-SRC = os.path.join(os.path.dirname(__file__), "微信图片_20260407162055_248_7.jpg")
-OUT = os.path.join(os.path.dirname(__file__), "frames")
-TARGET_SIZE = 128  # shimeji 常用尺寸
+RAW_DIR    = os.path.join(os.path.dirname(__file__), "raw")
+OUT        = os.path.join(os.path.dirname(__file__), "frames")
 
-# ── 1. 去白底 ──────────────────────────────────────────────────────────────
+SRC_WALK   = os.path.join(RAW_DIR, "zhizhi走路.jpg")
+SRC_PRONE  = os.path.join(RAW_DIR, "zhizhi趴着.jpg")
+
+# 统一画布尺寸：所有帧都放在这个大小的透明底上
+CANVAS_W = 160
+CANVAS_H = 160
+
+# ── 工具函数 ──────────────────────────────────────────────────────────────────
+
 def remove_white_bg(img: Image.Image, threshold=230) -> Image.Image:
-    """将接近白色的像素变成透明"""
     img = img.convert("RGBA")
     data = np.array(img, dtype=np.float32)
-
     r, g, b, a = data[..., 0], data[..., 1], data[..., 2], data[..., 3]
-    # 判断"白色区域"：三个通道都高且彼此接近
     is_white = (r > threshold) & (g > threshold) & (b > threshold)
-    # 边缘过渡：计算与白色的距离做渐变 alpha
     dist = np.sqrt((255 - r)**2 + (255 - g)**2 + (255 - b)**2)
     edge_alpha = np.clip(dist / 30 * 255, 0, 255)
     a[is_white] = 0
-    # 边缘柔化
     a = np.where(is_white, 0, np.minimum(a, edge_alpha + 200))
-
     data[..., 3] = np.clip(a, 0, 255)
-    result = Image.fromarray(data.astype(np.uint8), "RGBA")
-    return result
+    return Image.fromarray(data.astype(np.uint8), "RGBA")
 
-# ── 2. 自动裁剪内容区域 ────────────────────────────────────────────────────
-def autocrop(img: Image.Image, padding=4) -> Image.Image:
+def autocrop(img: Image.Image, padding=6) -> Image.Image:
     bbox = img.getbbox()
     if bbox is None:
         return img
     l, t, r, b = bbox
-    l = max(0, l - padding)
-    t = max(0, t - padding)
-    r = min(img.width, r + padding)
-    b = min(img.height, b + padding)
-    return img.crop((l, t, r, b))
+    return img.crop((max(0, l-padding), max(0, t-padding),
+                     min(img.width, r+padding), min(img.height, b+padding)))
 
-# ── 3. 缩放到目标尺寸（保持比例） ────────────────────────────────────────
-def resize_keep_ratio(img: Image.Image, max_size: int) -> Image.Image:
+def resize_keep_ratio(img: Image.Image, max_w: int, max_h: int) -> Image.Image:
     w, h = img.size
-    scale = max_size / max(w, h)
-    new_w, new_h = int(w * scale), int(h * scale)
-    return img.resize((new_w, new_h), Image.LANCZOS)
+    scale = min(max_w / w, max_h / h)
+    return img.resize((int(w * scale), int(h * scale)), Image.LANCZOS)
 
-# ── 4. 生成帧变体 ─────────────────────────────────────────────────────────
-def make_walk_frame(base: Image.Image, shift_x=0, shift_y=0, rotate=0) -> Image.Image:
-    """通过平移 / 轻微旋转模拟走路帧"""
-    w, h = base.size
-    canvas = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-    if rotate != 0:
-        rotated = base.rotate(rotate, expand=False, resample=Image.BICUBIC)
-    else:
-        rotated = base
-    paste_x = shift_x
-    paste_y = shift_y
-    canvas.paste(rotated, (paste_x, paste_y), rotated)
+def place_on_canvas(img: Image.Image,
+                    canvas_w=CANVAS_W, canvas_h=CANVAS_H,
+                    align_bottom=True,
+                    shift_x=0, shift_y=0) -> Image.Image:
+    """把图贴到固定大小透明画布上，水平居中，底部对齐"""
+    canvas = Image.new("RGBA", (canvas_w, canvas_h), (0, 0, 0, 0))
+    x = (canvas_w - img.width) // 2 + shift_x
+    y = (canvas_h - img.height) + shift_y if align_bottom else shift_y
+    canvas.paste(img, (x, y), img)
     return canvas
 
-def make_fall_frame(base: Image.Image) -> Image.Image:
-    """下落帧：整体向右倾斜"""
-    w, h = base.size
-    canvas = Image.new("RGBA", (w, h + 10), (0, 0, 0, 0))
-    tilted = base.rotate(-15, expand=False, resample=Image.BICUBIC)
-    canvas.paste(tilted, (0, 10), tilted)
-    return canvas
+def process_source(path: str, max_w: int, max_h: int) -> Image.Image:
+    """读取 → 去白底 → 裁剪 → 缩放"""
+    raw = Image.open(path)
+    no_bg = remove_white_bg(raw, threshold=232)
+    cropped = autocrop(no_bg)
+    return resize_keep_ratio(cropped, max_w, max_h)
 
-# ── 主流程 ────────────────────────────────────────────────────────────────
+def save(img: Image.Image, name: str):
+    path = os.path.join(OUT, name)
+    img.save(path)
+    print(f"  ✓ {name}")
+    return path
+
+# ── 主流程 ────────────────────────────────────────────────────────────────────
+
 def main():
-    print(f"读取: {SRC}")
-    raw = Image.open(SRC)
-    print(f"原始尺寸: {raw.size}")
-
-    print("去除白色背景...")
-    no_bg = remove_white_bg(raw, threshold=235)
-
-    print("自动裁剪...")
-    cropped = autocrop(no_bg, padding=6)
-    print(f"裁剪后尺寸: {cropped.size}")
-
-    print(f"缩放到 {TARGET_SIZE}px...")
-    base = resize_keep_ratio(cropped, TARGET_SIZE)
-
     os.makedirs(OUT, exist_ok=True)
 
-    # 保存透明底基础图
-    base_path = os.path.join(OUT, "base_transparent.png")
-    base.save(base_path)
-    print(f"✓ 保存透明底基础图: {base_path}")
+    # ── 走路素材（保持高度最大 140px，留出画布空间） ──────────────────────
+    print("处理走路图...")
+    walk_base = process_source(SRC_WALK, max_w=130, max_h=140)
+    print(f"  走路图尺寸: {walk_base.size}")
 
-    # ── 走路帧（左向）：4 帧循环 ──────────────────────────────────────
-    walk_variants = [
-        (0,  0,  0),    # 站立 / 走路第1帧
-        (0, -3,  2),    # 抬脚
-        (0,  0,  0),    # 还原
-        (0, -2, -2),    # 另一侧
-    ]
-    for i, (sx, sy, rot) in enumerate(walk_variants):
-        frame = make_walk_frame(base, sx, sy, rot)
-        path = os.path.join(OUT, f"walk_left_{i+1:02d}.png")
-        frame.save(path)
-        print(f"✓ 走路帧(左) {i+1}: {path}")
+    # 走路右向（原图面朝右）：4帧，上下轻微抖动模拟迈步
+    print("生成 walk_right 帧:")
+    bob = [0, -4, -1, -4]   # 每帧的垂直偏移，模拟重心起伏
+    for i, dy in enumerate(bob):
+        frame = place_on_canvas(walk_base, shift_y=dy)
+        save(frame, f"walk_right_{i+1:02d}.png")
 
-    # ── 走路帧（右向）：镜像 ──────────────────────────────────────────
-    for i, (sx, sy, rot) in enumerate(walk_variants):
-        frame = make_walk_frame(base, sx, sy, rot)
-        frame_r = frame.transpose(Image.FLIP_LEFT_RIGHT)
-        path = os.path.join(OUT, f"walk_right_{i+1:02d}.png")
-        frame_r.save(path)
-        print(f"✓ 走路帧(右) {i+1}: {path}")
+    # 走路左向：镜像
+    walk_base_l = walk_base.transpose(Image.FLIP_LEFT_RIGHT)
+    print("生成 walk_left 帧:")
+    for i, dy in enumerate(bob):
+        frame = place_on_canvas(walk_base_l, shift_y=dy)
+        save(frame, f"walk_left_{i+1:02d}.png")
 
-    # ── 站立待机帧 ────────────────────────────────────────────────────
-    idle = base.copy()
-    idle.save(os.path.join(OUT, "idle_01.png"))
-    # 轻微上下浮动
-    idle2 = make_walk_frame(base, 0, -2, 0)
-    idle2.save(os.path.join(OUT, "idle_02.png"))
-    print("✓ 站立帧: idle_01.png, idle_02.png")
+    # ── 趴着素材（宽图，限宽 150px） ─────────────────────────────────────
+    print("处理趴着图...")
+    prone_base = process_source(SRC_PRONE, max_w=150, max_h=100)
+    print(f"  趴着图尺寸: {prone_base.size}")
 
-    # ── 掉落帧 ────────────────────────────────────────────────────────
-    fall = make_fall_frame(base)
-    fall.save(os.path.join(OUT, "fall_01.png"))
-    fall_r = fall.transpose(Image.FLIP_LEFT_RIGHT)
-    fall_r.save(os.path.join(OUT, "fall_02.png"))
-    print("✓ 掉落帧: fall_01.png, fall_02.png")
+    # idle 待机：2帧，模拟轻微呼吸（垂直微浮动）
+    print("生成 idle 帧:")
+    for i, dy in enumerate([0, -2]):
+        frame = place_on_canvas(prone_base, shift_y=dy)
+        save(frame, f"idle_{i+1:02d}.png")
 
-    # ── 拖拽帧 ────────────────────────────────────────────────────────
-    drag = make_walk_frame(base, 0, 0, 10)
-    drag.save(os.path.join(OUT, "drag_01.png"))
-    print("✓ 拖拽帧: drag_01.png")
+    # ── 掉落帧：走路图倾斜 ────────────────────────────────────────────────
+    print("生成 fall 帧:")
+    fall_img = walk_base.rotate(-20, expand=True, resample=Image.BICUBIC)
+    fall_img = resize_keep_ratio(fall_img, max_w=130, max_h=140)
+    frame = place_on_canvas(fall_img)
+    save(frame, "fall_01.png")
+    frame_r = place_on_canvas(fall_img.transpose(Image.FLIP_LEFT_RIGHT))
+    save(frame_r, "fall_02.png")
 
-    print(f"\n全部完成！共生成 {len(os.listdir(OUT))} 张图片 → {OUT}")
-    print("\n注意：这是基于图像变换的基础版本。")
-    print("如需更自然的动画，建议使用 AI 生成工具（ComfyUI + IP-Adapter）")
+    # ── 拖拽帧：走路图向右倾斜（被抓起的感觉） ───────────────────────────
+    print("生成 drag 帧:")
+    drag_img = walk_base.rotate(15, expand=True, resample=Image.BICUBIC)
+    drag_img = resize_keep_ratio(drag_img, max_w=130, max_h=140)
+    frame = place_on_canvas(drag_img)
+    save(frame, "drag_01.png")
+
+    # ── 保存透明底基础图（供参考） ────────────────────────────────────────
+    save(place_on_canvas(walk_base), "base_transparent.png")
+
+    total = len([f for f in os.listdir(OUT) if f.endswith('.png')])
+    print(f"\n全部完成！共生成 {total} 张图片 → {OUT}")
+    print(f"画布尺寸统一为 {CANVAS_W}x{CANVAS_H}，锚点: ({CANVAS_W//2}, {CANVAS_H})")
 
 if __name__ == "__main__":
     main()
