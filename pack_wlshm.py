@@ -18,9 +18,9 @@ from PIL import Image
 FRAMES_DIR   = os.path.join(os.path.dirname(__file__), 'frames')
 OUT_DIR      = os.path.join(os.path.dirname(__file__), 'output')
 MASCOT_NAME  = 'Zhizhiji'          # 吱吱鸡（其实是老鼠但叫啥都行）
-IMG_W, IMG_H = 113, 128            # 帧图片实际尺寸
+IMG_W, IMG_H = 160, 160            # 统一画布尺寸
 ANCHOR_X     = IMG_W // 2          # 脚部锚点 X（水平中心）
-ANCHOR_Y     = IMG_H               # 脚部锚点 Y（图片底部）
+ANCHOR_Y     = IMG_H               # 脚部锚点 Y（画布底部）
 WALK_VX      = 3                   # 走路速度（像素/帧）
 FRAME_DUR    = 8                   # 每帧持续时间（tick）
 # ─────────────────────────────────────────────────────────────────────────────
