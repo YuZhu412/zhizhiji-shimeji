@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Mascot xmlns="http://www.group-finity.com/Mascot">
+  <ActionList>
+
+    <Action Name="WalkLeft" Type="Move" Loop="true"
+            InitialVX="-3" InitialVY="0"
+            BorderType="Floor">
+      <Animation>
+        <Pose Image="/walk_left_01.png" ImageAnchor="56,128" Velocity="-3,0" Duration="8"/>
+        <Pose Image="/walk_left_02.png" ImageAnchor="56,128" Velocity="-3,0" Duration="8"/>
+        <Pose Image="/walk_left_03.png" ImageAnchor="56,128" Velocity="-3,0" Duration="8"/>
+        <Pose Image="/walk_left_04.png" ImageAnchor="56,128" Velocity="-3,0" Duration="8"/>
+      </Animation>
+    </Action>
+
+    <Action Name="WalkRight" Type="Move" Loop="true"
+            InitialVX="3" InitialVY="0"
+            BorderType="Floor">
+      <Animation>
+        <Pose Image="/walk_right_01.png" ImageAnchor="56,128" Velocity="3,0" Duration="8"/>
+        <Pose Image="/walk_right_02.png" ImageAnchor="56,128" Velocity="3,0" Duration="8"/>
+        <Pose Image="/walk_right_03.png" ImageAnchor="56,128" Velocity="3,0" Duration="8"/>
+        <Pose Image="/walk_right_04.png" ImageAnchor="56,128" Velocity="3,0" Duration="8"/>
+      </Animation>
+    </Action>
+
+    <Action Name="Stand" Type="Stay" Loop="true"
+            BorderType="Floor">
+      <Animation>
+        <Pose Image="/idle_01.png" ImageAnchor="56,128" Velocity="0,0" Duration="8"/>
+        <Pose Image="/idle_02.png" ImageAnchor="56,128" Velocity="0,0" Duration="8"/>
+      </Animation>
+    </Action>
+
+    <Action Name="Fall" Type="Embedded" Loop="true"
+            Class="com.group_finity.mascot.action.Fall"
+            InitialVX="0" InitialVY="0"
+            Gravity="2">
+      <Animation>
+        <Pose Image="/fall_01.png" ImageAnchor="56,128" Velocity="0,3" Duration="8"/>
+        <Pose Image="/fall_02.png" ImageAnchor="56,128" Velocity="0,3" Duration="8"/>
+      </Animation>
+    </Action>
+
+    <Action Name="Dragged" Type="Embedded" Loop="true"
+            Class="com.group_finity.mascot.action.Dragged">
+      <Animation>
+        <Pose Image="/drag_01.png" ImageAnchor="56,128" Velocity="0,0" Duration="8"/>
+      </Animation>
+    </Action>
+
+    <Action Name="Thrown" Type="Embedded" Loop="true"
+            Class="com.group_finity.mascot.action.Fall"
+            InitialVX="0" InitialVY="-20"
+            Gravity="2">
+      <Animation>
+        <Pose Image="/fall_01.png" ImageAnchor="56,128" Velocity="0,3" Duration="8"/>
+        <Pose Image="/fall_02.png" ImageAnchor="56,128" Velocity="0,3" Duration="8"/>
+      </Animation>
+    </Action>
+
+  </ActionList>
+</Mascot>
