@@ -1,2 +1,7 @@
 # 不提交 wlshm 二进制（可由脚本重新生成）
 output/*.wlshm
+
+# 不提交本地 Shimeji-ee 运行日志
+runtime/shimejiee-local/shimejiee/ShimejieeLog*.log
+runtime/shimejiee-local/shimejiee/ShimejieeLog*.log.lck
+runtime/shimejiee-local/shimejiee/hs_err_pid*.log
