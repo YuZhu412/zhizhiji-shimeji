@@ -6,10 +6,10 @@
             InitialVX="-3" InitialVY="0"
             BorderType="Floor">
       <Animation>
-        <Pose Image="/img/Zhizhiji/walk_left_01.png" ImageAnchor="56,128" Velocity="-3,0" Duration="8"/>
-        <Pose Image="/img/Zhizhiji/walk_left_02.png" ImageAnchor="56,128" Velocity="-3,0" Duration="8"/>
-        <Pose Image="/img/Zhizhiji/walk_left_03.png" ImageAnchor="56,128" Velocity="-3,0" Duration="8"/>
-        <Pose Image="/img/Zhizhiji/walk_left_04.png" ImageAnchor="56,128" Velocity="-3,0" Duration="8"/>
+        <Pose Image="/img/Zhizhiji/walk_left_01.png" ImageAnchor="80,160" Velocity="-3,0" Duration="8"/>
+        <Pose Image="/img/Zhizhiji/walk_left_02.png" ImageAnchor="80,160" Velocity="-3,0" Duration="8"/>
+        <Pose Image="/img/Zhizhiji/walk_left_03.png" ImageAnchor="80,160" Velocity="-3,0" Duration="8"/>
+        <Pose Image="/img/Zhizhiji/walk_left_04.png" ImageAnchor="80,160" Velocity="-3,0" Duration="8"/>
       </Animation>
     </Action>
 
@@ -17,18 +17,18 @@
             InitialVX="3" InitialVY="0"
             BorderType="Floor">
       <Animation>
-        <Pose Image="/img/Zhizhiji/walk_right_01.png" ImageAnchor="56,128" Velocity="3,0" Duration="8"/>
-        <Pose Image="/img/Zhizhiji/walk_right_02.png" ImageAnchor="56,128" Velocity="3,0" Duration="8"/>
-        <Pose Image="/img/Zhizhiji/walk_right_03.png" ImageAnchor="56,128" Velocity="3,0" Duration="8"/>
-        <Pose Image="/img/Zhizhiji/walk_right_04.png" ImageAnchor="56,128" Velocity="3,0" Duration="8"/>
+        <Pose Image="/img/Zhizhiji/walk_right_01.png" ImageAnchor="80,160" Velocity="3,0" Duration="8"/>
+        <Pose Image="/img/Zhizhiji/walk_right_02.png" ImageAnchor="80,160" Velocity="3,0" Duration="8"/>
+        <Pose Image="/img/Zhizhiji/walk_right_03.png" ImageAnchor="80,160" Velocity="3,0" Duration="8"/>
+        <Pose Image="/img/Zhizhiji/walk_right_04.png" ImageAnchor="80,160" Velocity="3,0" Duration="8"/>
       </Animation>
     </Action>
 
     <Action Name="Stand" Type="Stay" Loop="true"
             BorderType="Floor">
       <Animation>
-        <Pose Image="/img/Zhizhiji/idle_01.png" ImageAnchor="56,128" Velocity="0,0" Duration="8"/>
-        <Pose Image="/img/Zhizhiji/idle_02.png" ImageAnchor="56,128" Velocity="0,0" Duration="8"/>
+        <Pose Image="/img/Zhizhiji/idle_01.png" ImageAnchor="80,160" Velocity="0,0" Duration="8"/>
+        <Pose Image="/img/Zhizhiji/idle_02.png" ImageAnchor="80,160" Velocity="0,0" Duration="8"/>
       </Animation>
     </Action>
 
@@ -37,15 +37,15 @@
             InitialVX="0" InitialVY="0"
             Gravity="2">
       <Animation>
-        <Pose Image="/img/Zhizhiji/fall_01.png" ImageAnchor="56,128" Velocity="0,3" Duration="8"/>
-        <Pose Image="/img/Zhizhiji/fall_02.png" ImageAnchor="56,128" Velocity="0,3" Duration="8"/>
+        <Pose Image="/img/Zhizhiji/fall_01.png" ImageAnchor="80,160" Velocity="0,3" Duration="8"/>
+        <Pose Image="/img/Zhizhiji/fall_02.png" ImageAnchor="80,160" Velocity="0,3" Duration="8"/>
       </Animation>
     </Action>
 
     <Action Name="Dragged" Type="Embedded" Loop="true"
             Class="com.group_finity.mascot.action.Dragged">
       <Animation>
-        <Pose Image="/img/Zhizhiji/drag_01.png" ImageAnchor="56,128" Velocity="0,0" Duration="8"/>
+        <Pose Image="/img/Zhizhiji/drag_01.png" ImageAnchor="80,160" Velocity="0,0" Duration="8"/>
       </Animation>
     </Action>
 
@@ -54,8 +54,8 @@
             InitialVX="0" InitialVY="-20"
             Gravity="2">
       <Animation>
-        <Pose Image="/img/Zhizhiji/fall_01.png" ImageAnchor="56,128" Velocity="0,3" Duration="8"/>
-        <Pose Image="/img/Zhizhiji/fall_02.png" ImageAnchor="56,128" Velocity="0,3" Duration="8"/>
+        <Pose Image="/img/Zhizhiji/fall_01.png" ImageAnchor="80,160" Velocity="0,3" Duration="8"/>
+        <Pose Image="/img/Zhizhiji/fall_02.png" ImageAnchor="80,160" Velocity="0,3" Duration="8"/>
       </Animation>
     </Action>
 
