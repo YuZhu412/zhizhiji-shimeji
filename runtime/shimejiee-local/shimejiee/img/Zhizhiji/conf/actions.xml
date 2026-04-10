@@ -2,33 +2,28 @@
 <Mascot xmlns="http://www.group-finity.com/Mascot">
   <ActionList>
 
-    <Action Name="WalkLeft" Type="Move" Loop="true"
-            InitialVX="-3" InitialVY="0"
-            BorderType="Floor">
+    <Action Name="Stand" Type="Stay" BorderType="Floor" Duration="600">
       <Animation>
-        <Pose Image="/walk_left_01.png" ImageAnchor="80,160" Velocity="-3,0" Duration="8"/>
-        <Pose Image="/walk_left_02.png" ImageAnchor="80,160" Velocity="-3,0" Duration="8"/>
-        <Pose Image="/walk_left_03.png" ImageAnchor="80,160" Velocity="-3,0" Duration="8"/>
-        <Pose Image="/walk_left_04.png" ImageAnchor="80,160" Velocity="-3,0" Duration="8"/>
+        <Pose Image="/idle_01.png" ImageAnchor="80,160" Velocity="0,0" Duration="50"/>
+        <Pose Image="/idle_02.png" ImageAnchor="80,160" Velocity="0,0" Duration="50"/>
       </Animation>
     </Action>
 
-    <Action Name="WalkRight" Type="Move" Loop="true"
-            InitialVX="3" InitialVY="0"
-            BorderType="Floor">
+    <Action Name="WalkLeft" Type="Move" BorderType="Floor">
       <Animation>
-        <Pose Image="/walk_right_01.png" ImageAnchor="80,160" Velocity="3,0" Duration="8"/>
-        <Pose Image="/walk_right_02.png" ImageAnchor="80,160" Velocity="3,0" Duration="8"/>
-        <Pose Image="/walk_right_03.png" ImageAnchor="80,160" Velocity="3,0" Duration="8"/>
-        <Pose Image="/walk_right_04.png" ImageAnchor="80,160" Velocity="3,0" Duration="8"/>
+        <Pose Image="/walk_right_01.png" ImageAnchor="80,160" Velocity="-3,0" Duration="8"/>
+        <Pose Image="/walk_right_02.png" ImageAnchor="80,160" Velocity="-3,0" Duration="8"/>
+        <Pose Image="/walk_right_03.png" ImageAnchor="80,160" Velocity="-3,0" Duration="8"/>
+        <Pose Image="/walk_right_04.png" ImageAnchor="80,160" Velocity="-3,0" Duration="8"/>
       </Animation>
     </Action>
 
-    <Action Name="Stand" Type="Stay" Loop="true"
-            BorderType="Floor">
+    <Action Name="WalkRight" Type="Move" BorderType="Floor">
       <Animation>
-        <Pose Image="/idle_01.png" ImageAnchor="80,160" Velocity="0,0" Duration="8"/>
-        <Pose Image="/idle_02.png" ImageAnchor="80,160" Velocity="0,0" Duration="8"/>
+        <Pose Image="/walk_left_01.png" ImageAnchor="80,160" Velocity="3,0" Duration="8"/>
+        <Pose Image="/walk_left_02.png" ImageAnchor="80,160" Velocity="3,0" Duration="8"/>
+        <Pose Image="/walk_left_03.png" ImageAnchor="80,160" Velocity="3,0" Duration="8"/>
+        <Pose Image="/walk_left_04.png" ImageAnchor="80,160" Velocity="3,0" Duration="8"/>
       </Animation>
     </Action>
 
