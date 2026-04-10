@@ -32,7 +32,7 @@
             InitialVX="0" InitialVY="0"
             Gravity="2">
       <Animation>
-        <Pose Image="/img/Zhizhiji/fall_01.png" ImageAnchor="80,160" Velocity="0,3" Duration="100"/>
+        <Pose Image="/img/Zhizhiji/fall_01.png" ImageAnchor="80,160" Velocity="0,0" Duration="100"/>
       </Animation>
     </Action>
 
@@ -48,7 +48,7 @@
             InitialVX="0" InitialVY="-8"
             Gravity="2">
       <Animation>
-        <Pose Image="/img/Zhizhiji/fall_01.png" ImageAnchor="80,160" Velocity="0,3" Duration="100"/>
+        <Pose Image="/img/Zhizhiji/fall_01.png" ImageAnchor="80,160" Velocity="0,0" Duration="100"/>
       </Animation>
     </Action>
 
