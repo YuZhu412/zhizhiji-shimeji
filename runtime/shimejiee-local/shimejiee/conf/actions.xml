@@ -9,7 +9,7 @@
       </Animation>
     </Action>
 
-    <Action Name="WalkLeft" Type="Move" BorderType="Floor">
+    <Action Name="WalkLeft" Type="Move" BorderType="Floor" Duration="175">
       <Animation>
         <Pose Image="/img/Zhizhiji/walk_right_01.png" ImageAnchor="80,160" Velocity="-3,0" Duration="8"/>
         <Pose Image="/img/Zhizhiji/walk_right_02.png" ImageAnchor="80,160" Velocity="-3,0" Duration="8"/>
@@ -18,7 +18,7 @@
       </Animation>
     </Action>
 
-    <Action Name="WalkRight" Type="Move" BorderType="Floor">
+    <Action Name="WalkRight" Type="Move" BorderType="Floor" Duration="175">
       <Animation>
         <Pose Image="/img/Zhizhiji/walk_left_01.png" ImageAnchor="80,160" Velocity="3,0" Duration="8"/>
         <Pose Image="/img/Zhizhiji/walk_left_02.png" ImageAnchor="80,160" Velocity="3,0" Duration="8"/>
@@ -32,8 +32,7 @@
             InitialVX="0" InitialVY="0"
             Gravity="2">
       <Animation>
-        <Pose Image="/img/Zhizhiji/fall_01.png" ImageAnchor="80,160" Velocity="0,3" Duration="8"/>
-        <Pose Image="/img/Zhizhiji/fall_02.png" ImageAnchor="80,160" Velocity="0,3" Duration="8"/>
+        <Pose Image="/img/Zhizhiji/fall_01.png" ImageAnchor="80,160" Velocity="0,3" Duration="100"/>
       </Animation>
     </Action>
 
@@ -46,11 +45,10 @@
 
     <Action Name="Thrown" Type="Embedded" Loop="true"
             Class="com.group_finity.mascot.action.Fall"
-            InitialVX="0" InitialVY="-20"
+            InitialVX="0" InitialVY="-8"
             Gravity="2">
       <Animation>
-        <Pose Image="/img/Zhizhiji/fall_01.png" ImageAnchor="80,160" Velocity="0,3" Duration="8"/>
-        <Pose Image="/img/Zhizhiji/fall_02.png" ImageAnchor="80,160" Velocity="0,3" Duration="8"/>
+        <Pose Image="/img/Zhizhiji/fall_01.png" ImageAnchor="80,160" Velocity="0,3" Duration="100"/>
       </Animation>
     </Action>
 
