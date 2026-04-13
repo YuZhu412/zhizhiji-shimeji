@@ -18,10 +18,12 @@ os.makedirs(PROC_DIR, exist_ok=True)
 
 # ── 工具函数 ─────────────────────────────────────────────────────────────────
 
-def load_remove_black(path, dark_thresh=60, feather=40):
+def load_remove_black(path, dark_thresh=12, feather=18, shadow_bright=90, shadow_chroma=28):
     """
-    从图片边缘做 BFS 洪泛填充，只去掉与边缘相连的黑色背景。
-    眼睛、蹄子等内部深色部分因为孤立而被完整保留。
+    从图片边缘做 BFS 洪泛填充，只去掉与边缘相连的近纯黑背景。
+    - dark_thresh 极低（12），只有真正的纯黑像素才参与 BFS 扩展，
+      不会误吃蹄子/眼睛等深色但非纯黑的部位。
+    - 背景去除后，额外清除孤立的亮色小像素团（水印文字）。
     """
     from collections import deque
 
@@ -29,16 +31,19 @@ def load_remove_black(path, dark_thresh=60, feather=40):
     arr = np.array(img, dtype=np.uint8)
     h, w = arr.shape[:2]
 
-    # 亮度图（最亮通道）
+    # ── 预处理：把右下角水印区域涂成纯黑，让 BFS 一起清掉 ────────────────
+    wm_h = int(h * 0.12)   # 底部 12%
+    wm_w = int(w * 0.28)   # 右侧 28%
+    arr[h - wm_h:, w - wm_w:, :3] = 0   # RGB → 纯黑，alpha 不动
+
     brightness = arr[..., :3].max(axis=2).astype(np.int32)
 
-    # "暗像素"掩码：亮度 < dark_thresh + feather（用于 BFS 邻居扩展）
+    # BFS 扩展条件：亮度 < dark_thresh + feather（仅扩展真正暗的像素）
     dark_mask = brightness < (dark_thresh + feather)
 
-    # BFS：从四条边界上所有暗像素出发，找到所有与背景相连的暗区域
+    # ── BFS 从四边出发 ─────────────────────────────────────────────────────
     visited = np.zeros((h, w), dtype=bool)
     queue = deque()
-
     for x in range(w):
         for y in [0, h - 1]:
             if dark_mask[y, x] and not visited[y, x]:
@@ -58,15 +63,58 @@ def load_remove_black(path, dark_thresh=60, feather=40):
                 visited[ny, nx] = True
                 queue.append((ny, nx))
 
-    # visited == True 的像素是背景，根据亮度做平滑透明过渡
+    # 背景区域根据亮度做羽化过渡
     result = arr.copy()
-    bg = visited  # shape (h, w)
-
-    # 背景区域：按亮度做 feather 渐变（亮度越高越不透明，模拟边缘羽化）
     bg_alpha = np.clip((brightness - dark_thresh) / feather * 255, 0, 255).astype(np.uint8)
-    # 非背景区域保持原透明度
-    new_alpha = np.where(bg, bg_alpha, arr[..., 3])
+    new_alpha = np.where(visited, bg_alpha, arr[..., 3])
     result[..., 3] = new_alpha.astype(np.uint8)
+
+    # ── 去除地面阴影/反光：暗色且低饱和度的像素 ───────────────────────────
+    # 阴影特征：亮度低、色彩范围小（灰黑）；猪蹄特征：比阴影稍亮且带棕色调
+    r2 = result[..., 0].astype(np.int32)
+    g2 = result[..., 1].astype(np.int32)
+    b2 = result[..., 2].astype(np.int32)
+    br2 = np.maximum(np.maximum(r2, g2), b2)
+    chroma2 = br2 - np.minimum(np.minimum(r2, g2), b2)
+    # 暗（亮度<shadow_bright）且近灰（色彩范围<shadow_chroma）→ 阴影，清除
+    shadow_mask = (br2 < shadow_bright) & (chroma2 < shadow_chroma) & (result[..., 3] > 0)
+    result[..., 3][shadow_mask] = 0
+
+    # ── 去除孤立亮色像素团（水印文字）─────────────────────────────────────
+    # 对当前 alpha>0 的像素做连通区域标记，找出与主体不相连的小块并清除
+    alpha_mask = result[..., 3] > 30  # 当前不透明区域
+
+    # 用 BFS 找出所有连通区域，保留最大的（猪身体），其余小块清除
+    labeled = np.zeros((h, w), dtype=np.int32)
+    comp_id = 0
+    comp_sizes = {}
+
+    for sy in range(h):
+        for sx in range(w):
+            if alpha_mask[sy, sx] and labeled[sy, sx] == 0:
+                comp_id += 1
+                q2 = deque([(sy, sx)])
+                labeled[sy, sx] = comp_id
+                size = 0
+                while q2:
+                    cy2, cx2 = q2.popleft()
+                    size += 1
+                    for dy, dx in [(-1,0),(1,0),(0,-1),(0,1),
+                                   (-1,-1),(-1,1),(1,-1),(1,1)]:
+                        ny2, nx2 = cy2 + dy, cx2 + dx
+                        if 0 <= ny2 < h and 0 <= nx2 < w \
+                                and alpha_mask[ny2, nx2] and labeled[ny2, nx2] == 0:
+                            labeled[ny2, nx2] = comp_id
+                            q2.append((ny2, nx2))
+                comp_sizes[comp_id] = size
+
+    if comp_sizes:
+        # 主体是最大连通区域；小于主体 1% 的区域视为噪点/水印，清除
+        max_size = max(comp_sizes.values())
+        remove_threshold = max(max_size * 0.01, 200)   # 至少 200px 才保留
+        for cid, sz in comp_sizes.items():
+            if sz < remove_threshold:
+                result[..., 3][labeled == cid] = 0
 
     return Image.fromarray(result, "RGBA")
 
