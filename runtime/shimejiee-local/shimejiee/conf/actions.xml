@@ -2,7 +2,7 @@
 <Mascot xmlns="http://www.group-finity.com/Mascot">
   <ActionList>
 
-    <Action Name="Stand" Type="Stay" BorderType="Floor" Duration="600">
+    <Action Name="Stand" Type="Stay" Duration="600" Loop="true">
       <Animation>
         <Pose Image="/img/Zhizhiji/idle_01.png" ImageAnchor="80,160" Velocity="0,0" Duration="50"/>
         <Pose Image="/img/Zhizhiji/idle_02.png" ImageAnchor="80,160" Velocity="0,0" Duration="50"/>
@@ -27,7 +27,7 @@
       </Animation>
     </Action>
 
-    <Action Name="Fall" Type="Embedded" Loop="true"
+    <Action Name="Fall" Type="Embedded" Duration="100"
             Class="com.group_finity.mascot.action.Fall"
             InitialVX="0" InitialVY="0"
             Gravity="2">

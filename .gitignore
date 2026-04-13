@@ -5,3 +5,6 @@ output/*.wlshm
 runtime/shimejiee-local/shimejiee/ShimejieeLog*.log
 runtime/shimejiee-local/shimejiee/ShimejieeLog*.log.lck
 runtime/shimejiee-local/shimejiee/hs_err_pid*.log
+
+# 原始 zip 已解压为 source_code_shimejiee/，无需重复提交
+shimejieesrc.zip
