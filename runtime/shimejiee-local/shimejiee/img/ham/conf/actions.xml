@@ -31,13 +31,13 @@
 
     <Action Name="WallClingLeft" Type="Stay" Duration="999999">
       <Animation>
-        <Pose Image="/wall_cling_left.png" ImageAnchor="23,70" Velocity="0,0" Duration="50"/>
+        <Pose Image="/wall_cling_left.png" ImageAnchor="46,140" Velocity="0,0" Duration="50"/>
       </Animation>
     </Action>
 
     <Action Name="WallClingRight" Type="Stay" Duration="999999">
       <Animation>
-        <Pose Image="/wall_cling_right.png" ImageAnchor="56,70" Velocity="0,0" Duration="50"/>
+        <Pose Image="/wall_cling_right.png" ImageAnchor="112,140" Velocity="0,0" Duration="50"/>
       </Animation>
     </Action>
 

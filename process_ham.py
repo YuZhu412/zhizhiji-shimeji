@@ -212,16 +212,16 @@ for i in range(1, 5):
     save(walk_facing_left,  f"walk_right_{i:02d}.png")   # WalkLeft 动作
     save(walk_facing_right, f"walk_left_{i:02d}.png")    # WalkRight 动作
 
-# ── wall_cling 系列  (80×80) ─────────────────────────────────────────────────
-cling_base = fit_into_canvas(cling_raw, 80, 80, "center_center")
+# ── wall_cling 系列  (160×160) ───────────────────────────────────────────────
+cling_base = fit_into_canvas(cling_raw, 160, 160, "center_center")
 save(cling_base, "wall_cling.png")
 
 # 左墙：顺时针转 90°（头朝右，背朝墙）
-cling_left  = cling_base.rotate(-90, expand=True).resize((80, 80), Image.LANCZOS)
+cling_left  = cling_base.rotate(-90, expand=True).resize((160, 160), Image.LANCZOS)
 save(cling_left, "wall_cling_left.png")
 
 # 右墙：逆时针转 90°（头朝左，背朝墙）
-cling_right = cling_base.rotate(90, expand=True).resize((80, 80), Image.LANCZOS)
+cling_right = cling_base.rotate(90, expand=True).resize((160, 160), Image.LANCZOS)
 save(cling_right, "wall_cling_right.png")
 
 # ── 部署到运行目录 ────────────────────────────────────────────────────────────
