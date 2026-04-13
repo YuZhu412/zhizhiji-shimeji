@@ -18,37 +18,57 @@ os.makedirs(PROC_DIR, exist_ok=True)
 
 # ── 工具函数 ─────────────────────────────────────────────────────────────────
 
-def load_remove_black(path, black_thresh=60, feather=50):
+def load_remove_black(path, dark_thresh=60, feather=40):
     """
-    读取图片，去掉黑色/近黑背景，返回 RGBA Image。
-    采用双重判断：
-      1. 亮度低于阈值 → 透明（去掉纯黑背景和暗色阴影）
-      2. 饱和度高且较暗的像素（彩色暗部，如蹄子）→ 保留
+    从图片边缘做 BFS 洪泛填充，只去掉与边缘相连的黑色背景。
+    眼睛、蹄子等内部深色部分因为孤立而被完整保留。
     """
+    from collections import deque
+
     img = Image.open(path).convert("RGBA")
-    arr = np.array(img, dtype=np.float32)
+    arr = np.array(img, dtype=np.uint8)
+    h, w = arr.shape[:2]
 
-    r, g, b, a = arr[..., 0], arr[..., 1], arr[..., 2], arr[..., 3]
+    # 亮度图（最亮通道）
+    brightness = arr[..., :3].max(axis=2).astype(np.int32)
 
-    # 亮度 = 最亮通道
-    brightness = np.maximum(np.maximum(r, g), b)
-    # 色彩范围（高 = 有颜色，低 = 灰/黑）
-    chroma = brightness - np.minimum(np.minimum(r, g), b)
+    # "暗像素"掩码：亮度 < dark_thresh + feather（用于 BFS 邻居扩展）
+    dark_mask = brightness < (dark_thresh + feather)
 
-    # 基础亮度透明度
-    alpha_bright = np.clip((brightness - black_thresh) / feather * 255, 0, 255)
+    # BFS：从四条边界上所有暗像素出发，找到所有与背景相连的暗区域
+    visited = np.zeros((h, w), dtype=bool)
+    queue = deque()
 
-    # 对于有色彩的暗部（色差>20，说明是彩色物体，不是纯黑背景），降低透明度阈值保留细节
-    colorful_mask = chroma > 20
-    alpha_colorful = np.clip((brightness - 20) / 30 * 255, 0, 255)
+    for x in range(w):
+        for y in [0, h - 1]:
+            if dark_mask[y, x] and not visited[y, x]:
+                visited[y, x] = True
+                queue.append((y, x))
+    for y in range(h):
+        for x in [0, w - 1]:
+            if dark_mask[y, x] and not visited[y, x]:
+                visited[y, x] = True
+                queue.append((y, x))
 
-    new_alpha = np.where(colorful_mask, np.maximum(alpha_bright, alpha_colorful), alpha_bright)
-    new_alpha = np.clip(new_alpha, 0, 255)
-    new_alpha = (new_alpha * (a / 255.0)).astype(np.uint8)
+    while queue:
+        cy, cx = queue.popleft()
+        for dy, dx in [(-1,0),(1,0),(0,-1),(0,1)]:
+            ny, nx = cy + dy, cx + dx
+            if 0 <= ny < h and 0 <= nx < w and not visited[ny, nx] and dark_mask[ny, nx]:
+                visited[ny, nx] = True
+                queue.append((ny, nx))
 
+    # visited == True 的像素是背景，根据亮度做平滑透明过渡
     result = arr.copy()
-    result[..., 3] = new_alpha
-    return Image.fromarray(result.astype(np.uint8), "RGBA")
+    bg = visited  # shape (h, w)
+
+    # 背景区域：按亮度做 feather 渐变（亮度越高越不透明，模拟边缘羽化）
+    bg_alpha = np.clip((brightness - dark_thresh) / feather * 255, 0, 255).astype(np.uint8)
+    # 非背景区域保持原透明度
+    new_alpha = np.where(bg, bg_alpha, arr[..., 3])
+    result[..., 3] = new_alpha.astype(np.uint8)
+
+    return Image.fromarray(result, "RGBA")
 
 
 def fit_into_canvas(img_rgba, canvas_w, canvas_h, align="center_bottom"):
