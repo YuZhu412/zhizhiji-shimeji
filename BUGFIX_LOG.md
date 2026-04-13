@@ -1,4 +1,11 @@
-# 吱吱吉 Shimeji-ee 落地趴着问题修复完整记录
+# 吱吱吉 Shimeji-ee 完整修复记录
+
+> 本文档记录所有 Bug 的排查过程、失败尝试与最终解法。
+> 有效修复摘要见 [CORE_FIX.md](./CORE_FIX.md)。
+
+---
+
+# Bug #1：落地后无限 Fall 循环，无法显示趴着姿势
 
 ## 问题描述
 
@@ -502,7 +509,7 @@ Stand（趴着，显示 idle_01 / idle_02）  ← 持续 24 秒
 
 ---
 
-## 经验教训
+## Bug #1 经验教训
 
 1. **先确认读取的是哪个配置文件**：Shimeji-ee 的角色专属配置在 `img/<角色名>/conf/` 下，而非全局 `conf/` 目录。两套配置并存、内容不同，极易造成"改了没效果"的混淆。
 
@@ -515,3 +522,210 @@ Stand（趴着，显示 idle_01 / idle_02）  ← 持续 24 秒
 5. **JAR 内路径必须用正斜杠**：Windows 下用 .NET 重建 JAR 时会产生反斜杠路径，Java ClassLoader 无法识别，必须用 Python `zipfile` 显式替换为正斜杠。
 
 6. **不要在功能未验证时推送到主分支**：应先在本地完全验证，确认效果正确后再推送 GitHub。
+
+---
+
+---
+
+# Bug #2：WallCling 贴墙功能开发——拖拽放手后仍下落才触发贴墙
+
+## 需求描述
+
+当吱吱吉走到或被拖到屏幕左右边缘时，应立即以侧躺姿势贴在屏幕边缘，不再行走；若无鼠标交互，则保持该状态不动。
+
+---
+
+## 项目结构补充（新增文件）
+
+```
+img/Zhizhiji/
+├── wall_cling.png          # 趴地板版本（备用）
+├── wall_cling_left.png     # 左墙版本（原图顺时针旋转 90°，80×80）
+└── wall_cling_right.png    # 右墙版本（原图逆时针旋转 90°，80×80）
+```
+
+图片由 Python + Pillow 脚本从 `raw/zhizhiji趴在屏幕上.png` 生成：去除白色背景 → 裁剪 → 缩放至 80×80 → 旋转。
+
+---
+
+## 完整调试时间线与所有改动
+
+### 阶段 1：基础 WallCling 触发（走路到边界）
+
+**问题**：吱吱吉走到边缘时直接消失（OOB 越界重置），没有贴墙动作。
+
+**分析**：
+- `UserBehavior.java` 的 OOB 检测：当图片边界超出屏幕范围时，传送角色到屏幕顶部并触发 Fall。
+- 需要在角色走到边界之前主动停下并切换为 WallCling。
+
+**操作**：
+1. `actions.xml` 新增 `WallClingLeft` 和 `WallClingRight` Action（`Type="Stay"`）。
+2. `behaviors.xml` 新增对应 Behavior，在 `WalkLeft`/`WalkRight` 的 `NextBehaviorList` 中添加条件触发：
+   ```xml
+   <BehaviorReference Name="WallClingLeft" Frequency="9999"
+       Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 150}"/>
+   ```
+3. `WalkLeft`/`WalkRight` Action 加上 `Condition` 属性，在距边界 100px 时停止移动。
+
+**结果**：✅ 走路到边界时能触发 WallCling。
+
+---
+
+### 阶段 2：WallCling 图片视觉问题修复
+
+**问题 A：白色背景未去除**
+
+**操作**：Python 脚本用颜色阈值将白色/近白色像素替换为透明。
+
+**结果**：✅ 背景透明。
+
+---
+
+**问题 B：贴左右墙时方向不对**
+
+**需求**：贴左墙时图片向右旋转 90°，贴右墙时向左旋转 90°（即左右方向各自正确）。
+
+**操作**：生成 `wall_cling_left.png`（顺时针 90°）和 `wall_cling_right.png`（逆时针 90°），分别对应 `WallClingLeft` 和 `WallClingRight` Action。
+
+**结果**：✅ 方向正确。
+
+---
+
+**问题 C：图片尺寸过大，且触发后点击其他窗口会被任务栏遮挡**
+
+**分析**：
+- 原图 160×160，需要缩小。
+- 贴墙时 anchor 位置偏低，图片底部被任务栏覆盖。
+
+**操作**：
+- 缩放至 80×80。
+- 调整 `ImageAnchor` Y 值到 70（即图片底部在 anchor 上方 10px），使图片整体上移，不被任务栏遮挡。
+
+**结果**：✅ 尺寸合适，不被任务栏挡住。
+
+---
+
+### 阶段 3：拖拽放手后直接贴墙（不下落）
+
+**需求**：把吱吱吉拖到屏幕边缘放手，应立刻在原位触发 WallCling，不需要先落到地板。
+
+---
+
+#### 尝试 3-1：扩大 behaviors.xml 里的 WallCling 触发范围
+
+**思路**：在 `Stand`、`Fall`、`Dragged` 的 `NextBehaviorList` 中也加入 WallCling 条件，扩大到 150px 甚至 300px。
+
+**结果**：❌ 走路时能贴墙，但拖拽放手后仍然先下落再贴墙。原因在于 `Thrown` 行为是 Java 代码（`mouseReleased`）硬编码触发的，Dragged 的 `NextBehaviorList` 在放手时完全不执行。
+
+---
+
+#### 尝试 3-2：修改 Thrown 的 NextBehaviorList 条件
+
+**思路**：在 `Thrown` behavior 的 `NextBehaviorList` 里加入 WallCling 条件（300px 范围），使放手后优先触发 WallCling。
+
+**结果**：❌ 在日志里看到 `Thrown → WallClingRight` 直接跳转（无 Fall 中间步骤），但用户屏幕上仍然看到明显下落。
+
+---
+
+#### 尝试 3-3：分析日志与屏幕现象的差异
+
+**现象**：日志显示 `Thrown → WallClingRight`（无 Fall），但用户确认屏幕上看到了下落过程。
+
+**排查过程**：
+1. 检查 `Stay.java`：`Type="Stay"` 无 `BorderType` 时不移动 anchor，理论上不应下落。✅ 代码无问题。
+2. 检查 `Mascot.getBounds()`：使用 `anchor - image.center` 计算窗口位置，`center` 即 `ImageAnchor`。
+3. 最终读取实际运行中的 `actions.xml` 文件——
+
+**关键发现**：
+
+```xml
+<!-- 当时文件中 Thrown 的实际内容 -->
+<Action Name="Thrown" Type="Embedded" Loop="true"
+        Class="com.group_finity.mascot.action.Fall"
+        InitialVX="0" InitialVY="-8"
+        Gravity="2">
+  <Animation>
+    <Pose Image="/fall_01.png" ImageAnchor="80,160" Velocity="0,0" Duration="100"/>
+  </Animation>
+</Action>
+```
+
+**Thrown 仍然使用 `Embedded Fall` 类，带有 `InitialVY="-8"` 初速度和 `Gravity=2` 重力！** 之前的改动（改为 `Type="Stay" Duration="1"`）根本没有被保存到文件中，或被覆盖。
+
+**行为逻辑**：
+- `Thrown`（Embedded Fall）启动 → 先向上弹（InitialVY=-8）→ 重力拉回 → 落到地板
+- 地板检测完成 → `Thrown` 结束 → `NextBehaviorList` 评估 → `WallClingRight`
+
+用户看到的"下落"正是 Thrown 的物理模拟过程（先弹起再落地），整个过程约 0.5-1 秒。
+
+---
+
+#### 最终修复（阶段 3 根本原因）
+
+**修改 `img/Zhizhiji/conf/actions.xml`**，将 `Thrown` 从 Embedded Fall 改为 Stay：
+
+```xml
+<!-- 修复前 -->
+<Action Name="Thrown" Type="Embedded" Loop="true"
+        Class="com.group_finity.mascot.action.Fall"
+        InitialVX="0" InitialVY="-8"
+        Gravity="2">
+  <Animation>
+    <Pose Image="/fall_01.png" ImageAnchor="80,160" Velocity="0,0" Duration="100"/>
+  </Animation>
+</Action>
+
+<!-- 修复后 -->
+<Action Name="Thrown" Type="Stay" Duration="1">
+  <Animation>
+    <Pose Image="/fall_01.png" ImageAnchor="80,160" Velocity="0,0" Duration="1"/>
+  </Animation>
+</Action>
+```
+
+**原理**：
+- `Type="Stay"` 无物理引擎，anchor 不移动。
+- `Duration="1"` 表示 1 个 tick（40ms）即完成。
+- Thrown 完成后立即评估 `NextBehaviorList`，此时 anchor 仍在放手位置，若在边界范围内则直接触发 WallCling，不经过任何下落过程。
+
+**结果**：✅ 拖拽放手后立即在原位触发 WallCling，无下落。
+
+---
+
+### 阶段 4：最终交互状态机（Bug #2 完成后）
+
+```
+拖拽放手（屏幕边缘附近）
+  │
+  ▼
+Thrown（Stay，40ms，原位不动）
+  │
+  ├── anchor.x 在左墙 300px 内 → WallClingLeft（无限期停留）
+  ├── anchor.x 在右墙 300px 内 → WallClingRight（无限期停留）
+  └── 其他位置 → Fall → 落地 → Stand
+                    │
+                    ├── 落地在左墙 150px 内 → WallClingLeft
+                    └── 落地在右墙 150px 内 → WallClingRight
+
+自动行走到边界
+  │
+  ├── WalkLeft 到左墙 100px 内 → Condition 停止 → NextBehaviorList → WallClingLeft
+  └── WalkRight 到右墙 100px 内 → Condition 停止 → NextBehaviorList → WallClingRight
+
+WallClingLeft / WallClingRight
+  └── Duration=999999（约 11 小时）→ 鼠标拖拽后才会离开
+```
+
+---
+
+## Bug #2 经验教训
+
+1. **日志行为与视觉现象不一致时，先读实际配置文件**：本次排查绕了很多弯路——日志显示无 Fall，但用户屏幕有下落。根本原因是 `actions.xml` 里 Thrown 的实际定义从未被正确修改，日志记录的 behavior 状态机是对的，但 Action 本身还在运行物理引擎。
+
+2. **`Type="Embedded"` 与 `Type="Stay"` 有根本区别**：Embedded 使用 Java 类（如 Fall.java）执行完整物理模拟；Stay 是内置类型，直接保持位置不动。选错类型会导致完全不同的行为，且不会有任何报错提示。
+
+3. **`mouseReleased` 直接触发 Thrown，绕过 Dragged 的 NextBehaviorList**：放手事件在 `UserBehavior.mouseReleased()` 中硬编码调用 `buildBehavior("Thrown")`，与 Dragged 行为的 NextBehaviorList 无关。要控制放手后的行为，必须修改 Thrown 的 NextBehaviorList，而不是 Dragged 的。
+
+4. **Duration 的单位是 tick（40ms），不是秒**：`Duration="1"` = 40ms，`Duration="600"` = 24 秒。设置极大值（`Duration="999999"` ≈ 11 小时）是实现"无限等待用户交互"的有效方法。
+
+5. **DPI 缩放影响 anchor 偏移量**：`Dragged.java` 的 `DEFAULT_OFFSETY=120`，乘以 DPI 缩放 1.75 = 210 像素。放手时 anchor.y = cursor.y + 210，在屏幕下方拖拽时 anchor 可能超出 workArea 底部，触发 OOB 重置——这是另一个潜在的下落原因，但在本次修复中未复现（因为 Thrown 的 imageAnchor.y=160 使 getBounds().getY() 有足够余量）。

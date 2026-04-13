@@ -1,4 +1,10 @@
-# 核心问题：Fall 动作落地后无限循环
+# 吱吱吉 Shimeji-ee 核心修复摘要
+
+> 本文档只记录有效的修复方案。完整排查过程见 [BUGFIX_LOG.md](./BUGFIX_LOG.md)。
+
+---
+
+# Bug #1：Fall 动作落地后无限循环
 
 ## 症状
 
@@ -83,3 +89,90 @@ tick() 执行：
 而角色专属配置 `img/Zhizhiji/conf/actions.xml`（游戏**实际读取**此文件）里是 `"0,3"`。
 
 两份文件内容不同，且整个排查过程长期在修改错误的那份文件，掩盖了真正的问题。
+
+
+---
+
+---
+
+# Bug #2：拖拽放手后仍下落才触发 WallCling
+
+## 症状
+
+将吱吱吉拖到屏幕左右边缘放手后，角色先物理下落到地板，再切换到贴墙姿势；而非在放手位置立即贴墙。
+
+---
+
+## 根因
+
+`actions.xml` 中 `Thrown` Action 一直使用 `Type="Embedded" Class="Fall"`，带有 `InitialVY="-8"`（向上初速度）和 `Gravity="2"`（重力加速度）。
+
+放手流程：
+
+`
+mouseReleased() 触发
+  → 创建 Thrown behavior
+  → Thrown（Embedded Fall）启动
+  → 先向上弹 (InitialVY=-8)，重力拉回，最终落地（约 0.5-1 秒）
+  → 落地后 NextBehaviorList 评估 → WallClingRight/Left
+`
+
+因此用户看到的"先下落再贴墙"，并非行为状态机的 Bug（日志中 Thrown → WallCling 是正确跳转），而是 Thrown 这个 Action 本身就在运行物理引擎。
+
+---
+
+## 修复
+
+修改 `img/Zhizhiji/conf/actions.xml`，将 Thrown 改为 `Type="Stay"`：
+
+`xml
+<!-- 修复前：Embedded Fall，有物理下落过程 -->
+<Action Name="Thrown" Type="Embedded" Loop="true"
+        Class="com.group_finity.mascot.action.Fall"
+        InitialVX="0" InitialVY="-8"
+        Gravity="2">
+  <Animation>
+    <Pose Image="/fall_01.png" ImageAnchor="80,160" Velocity="0,0" Duration="100"/>
+  </Animation>
+</Action>
+
+<!-- 修复后：Stay，1 tick（40ms）后直接跳转 NextBehaviorList -->
+<Action Name="Thrown" Type="Stay" Duration="1">
+  <Animation>
+    <Pose Image="/fall_01.png" ImageAnchor="80,160" Velocity="0,0" Duration="1"/>
+  </Animation>
+</Action>
+`
+
+---
+
+## 修复后的效果
+
+`
+mouseReleased() 触发
+  → Thrown（Stay，40ms，anchor 不移动）
+  → 在放手坐标评估 NextBehaviorList
+     ├── 距右墙 300px 内 → WallClingRight（立即贴墙）✅
+     ├── 距左墙 300px 内 → WallClingLeft（立即贴墙）✅
+     └── 其他位置       → Fall（正常落地，无贴墙需求）
+`
+
+无需任何 Java 字节码修改，仅修改 XML 配置文件即可。
+
+---
+
+## 相关 XML 配置（behaviors.xml，Thrown 的 NextBehaviorList）
+
+`xml
+<Behavior Name="Thrown" Frequency="0" Action="Thrown">
+  <NextBehaviorList>
+    <BehaviorReference Name="WallClingLeft"  Frequency="9999"
+        Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 300}"/>
+    <BehaviorReference Name="WallClingRight" Frequency="9999"
+        Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 300}"/>
+    <BehaviorReference Name="Fall" Frequency="1"/>
+  </NextBehaviorList>
+</Behavior>
+```
+
+`Frequency="9999"` 保证在条件成立时 WallCling 被选中的概率约为 99.99%。
