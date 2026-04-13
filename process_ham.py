@@ -18,7 +18,7 @@ os.makedirs(PROC_DIR, exist_ok=True)
 
 # ── 工具函数 ─────────────────────────────────────────────────────────────────
 
-def load_remove_black(path, dark_thresh=12, feather=18, shadow_bright=90, shadow_chroma=28):
+def load_remove_black(path, dark_thresh=12, feather=18, shadow_bright=80, shadow_chroma=10):
     """
     从图片边缘做 BFS 洪泛填充，只去掉与边缘相连的近纯黑背景。
     - dark_thresh 极低（12），只有真正的纯黑像素才参与 BFS 扩展，
@@ -69,16 +69,27 @@ def load_remove_black(path, dark_thresh=12, feather=18, shadow_bright=90, shadow
     new_alpha = np.where(visited, bg_alpha, arr[..., 3])
     result[..., 3] = new_alpha.astype(np.uint8)
 
-    # ── 去除地面阴影/反光：暗色且低饱和度的像素 ───────────────────────────
-    # 阴影特征：亮度低、色彩范围小（灰黑）；猪蹄特征：比阴影稍亮且带棕色调
+    # ── 去除地面阴影/反光 ──────────────────────────────────────────────────
     r2 = result[..., 0].astype(np.int32)
     g2 = result[..., 1].astype(np.int32)
     b2 = result[..., 2].astype(np.int32)
     br2 = np.maximum(np.maximum(r2, g2), b2)
     chroma2 = br2 - np.minimum(np.minimum(r2, g2), b2)
-    # 暗（亮度<shadow_bright）且近灰（色彩范围<shadow_chroma）→ 阴影，清除
+
+    # 全图：极严格（chroma<10），只去纯灰像素，保留有色调的蹄子
     shadow_mask = (br2 < shadow_bright) & (chroma2 < shadow_chroma) & (result[..., 3] > 0)
     result[..., 3][shadow_mask] = 0
+
+    # 底部 8%：放宽到 chroma<22，强力清除紧贴地面的阴影烟雾
+    # 蹄子主体在 75-85% 位置，不会被这一步误删
+    bottom_strip = int(h * 0.08)
+    r3 = result[h - bottom_strip:, :, 0].astype(np.int32)
+    g3 = result[h - bottom_strip:, :, 1].astype(np.int32)
+    b3 = result[h - bottom_strip:, :, 2].astype(np.int32)
+    br3 = np.maximum(np.maximum(r3, g3), b3)
+    chroma3 = br3 - np.minimum(np.minimum(r3, g3), b3)
+    floor_mask = (br3 < shadow_bright) & (chroma3 < 22) & (result[h - bottom_strip:, :, 3] > 0)
+    result[h - bottom_strip:, :, 3][floor_mask] = 0
 
     # ── 去除孤立亮色像素团（水印文字）─────────────────────────────────────
     # 对当前 alpha>0 的像素做连通区域标记，找出与主体不相连的小块并清除
