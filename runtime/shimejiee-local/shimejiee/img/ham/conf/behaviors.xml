@@ -5,9 +5,9 @@
     <Behavior Name="Stand" Frequency="30" Action="Stand">
       <NextBehaviorList>
         <BehaviorReference Name="WallClingLeft"  Frequency="9999"
-            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 150}"/>
+            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 38}"/>
         <BehaviorReference Name="WallClingRight" Frequency="9999"
-            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 150}"/>
+            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 38}"/>
         <BehaviorReference Name="WalkLeft"  Frequency="25"/>
         <BehaviorReference Name="WalkRight" Frequency="25"/>
         <BehaviorReference Name="Stand"     Frequency="50"/>
@@ -17,7 +17,7 @@
     <Behavior Name="WalkLeft" Frequency="35" Action="WalkLeft">
       <NextBehaviorList>
         <BehaviorReference Name="WallClingLeft" Frequency="9999"
-            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 150}"/>
+            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 38}"/>
         <BehaviorReference Name="Stand"         Frequency="30"/>
         <BehaviorReference Name="WalkLeft"      Frequency="20"/>
         <BehaviorReference Name="WalkRight"     Frequency="20"/>
@@ -27,7 +27,7 @@
     <Behavior Name="WalkRight" Frequency="35" Action="WalkRight">
       <NextBehaviorList>
         <BehaviorReference Name="WallClingRight" Frequency="9999"
-            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 150}"/>
+            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 38}"/>
         <BehaviorReference Name="Stand"          Frequency="30"/>
         <BehaviorReference Name="WalkLeft"       Frequency="20"/>
         <BehaviorReference Name="WalkRight"      Frequency="20"/>
@@ -50,9 +50,9 @@
     <Behavior Name="Fall" Frequency="0" Action="Fall">
       <NextBehaviorList>
         <BehaviorReference Name="WallClingLeft"  Frequency="9999"
-            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 150}"/>
+            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 38}"/>
         <BehaviorReference Name="WallClingRight" Frequency="9999"
-            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 150}"/>
+            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 38}"/>
         <BehaviorReference Name="Stand" Frequency="1"/>
       </NextBehaviorList>
     </Behavior>
@@ -60,9 +60,9 @@
     <Behavior Name="Dragged" Frequency="0" Action="Dragged">
       <NextBehaviorList>
         <BehaviorReference Name="WallClingLeft"  Frequency="9999"
-            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 150}"/>
+            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 38}"/>
         <BehaviorReference Name="WallClingRight" Frequency="9999"
-            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 150}"/>
+            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 38}"/>
         <BehaviorReference Name="Stand" Frequency="1"/>
       </NextBehaviorList>
     </Behavior>
@@ -70,9 +70,9 @@
     <Behavior Name="Thrown" Frequency="0" Action="Thrown">
       <NextBehaviorList>
         <BehaviorReference Name="WallClingLeft"  Frequency="9999"
-            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 300}"/>
+            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 75}"/>
         <BehaviorReference Name="WallClingRight" Frequency="9999"
-            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 300}"/>
+            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 75}"/>
         <BehaviorReference Name="Fall" Frequency="1"/>
       </NextBehaviorList>
     </Behavior>
