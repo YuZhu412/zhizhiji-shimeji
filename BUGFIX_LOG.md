@@ -796,6 +796,16 @@ WallCling 触发范围：距墙 < 38px（anchor.x < left + 38）
 
 但 Shimeji-ee 的 `Move` action 在 Walk 结束时，会先执行一次 `Condition` 检查：如果此刻 anchor.x 已越过 `left + 25` 的边界（即角色在边界外），引擎触发 `Lost Ground` 事件并立即 OOB 传送，**NextBehaviorList 的条件根本不会被评估**。而 zhizhiji 的 WalkLeft 在选中时已处于墙边，预检直接命中 WallCling，绕过了 Lost Ground。
 
+**为什么同配置下 zhizhiji 没问题，ham 有问题？**
+
+两个角色的 anchor 均设为 `80,160`（160×160 画布正中底部），配置数值完全相同，但关键差异在于**图片内容的实际宽度**：
+
+- **zhizhiji** 体型纤细，图案与画布左边缘之间有较多透明空白。当 anchor 行走至 `left + 25` 时，图片包围盒的最左侧像素仍在 workArea 内，不触发 Lost Ground。zhizhiji 还因为大概率在选中 WalkLeft 时已离墙较近，直接走"预检命中 WallCling"的快捷路径，根本不经过 Lost Ground 判断。
+
+- **ham** 体型更宽（猪身横向几乎占满画布），图案延伸至画布最左列附近。当 anchor 行走至 `left + 25` 时，图片包围盒的最左侧像素已触碰或越过 `workArea.left`，Lost Ground 先于 NextBehaviorList 评估触发，角色被 OOB 传送。
+
+**结论**：`Lost Ground` 检测用的是整个图片包围盒，不是 anchor 点。ham 更宽的身体导致包围盒更早越界，这是同配置下 ham 独有此 Bug 的根本原因。
+
 ---
 
 ## 修复
