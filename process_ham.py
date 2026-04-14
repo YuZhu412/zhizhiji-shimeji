@@ -167,6 +167,11 @@ idle = fit_into_canvas(idle_raw, 160, 160, "center_bottom")
 save(idle, "idle_01.png")
 save(idle, "idle_02.png")
 
+# ── idle_01_r / idle_02_r  水平翻转版（StandRight 随机朝向用）────────────────
+idle_r = idle.transpose(Image.FLIP_LEFT_RIGHT)
+save(idle_r, "idle_01_r.png")
+save(idle_r, "idle_02_r.png")
+
 # ── walk 系列  (160×160) ──────────────────────────────────────────────────────
 # 原图朝左 → walk_right_*（WalkLeft 动作使用）
 # 镜像朝右 → walk_left_*（WalkRight 动作使用）

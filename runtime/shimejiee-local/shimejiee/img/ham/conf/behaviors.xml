@@ -2,7 +2,8 @@
 <Mascot xmlns="http://www.group-finity.com/Mascot">
   <BehaviorList>
 
-    <Behavior Name="Stand" Frequency="30" Action="Stand">
+    <!-- Stand/StandRight 各自只跳回自己，确保 idle 期间方向不变 -->
+    <Behavior Name="Stand" Frequency="15" Action="Stand">
       <NextBehaviorList>
         <BehaviorReference Name="WallClingLeft"  Frequency="9999"
             Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 38}"/>
@@ -14,13 +15,27 @@
       </NextBehaviorList>
     </Behavior>
 
+    <!-- 水平翻转版 idle，进入时随机选到此则朝右，之后一直保持 -->
+    <Behavior Name="StandRight" Frequency="15" Action="StandRight">
+      <NextBehaviorList>
+        <BehaviorReference Name="WallClingLeft"  Frequency="9999"
+            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 38}"/>
+        <BehaviorReference Name="WallClingRight" Frequency="9999"
+            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 38}"/>
+        <BehaviorReference Name="WalkLeft"   Frequency="25"/>
+        <BehaviorReference Name="WalkRight"  Frequency="25"/>
+        <BehaviorReference Name="StandRight" Frequency="50"/>
+      </NextBehaviorList>
+    </Behavior>
+
     <Behavior Name="WalkLeft" Frequency="35" Action="WalkLeft">
       <NextBehaviorList>
         <BehaviorReference Name="WallClingLeft" Frequency="9999"
             Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 38}"/>
-        <BehaviorReference Name="Stand"         Frequency="30"/>
-        <BehaviorReference Name="WalkLeft"      Frequency="20"/>
-        <BehaviorReference Name="WalkRight"     Frequency="20"/>
+        <BehaviorReference Name="Stand"      Frequency="15"/>
+        <BehaviorReference Name="StandRight" Frequency="15"/>
+        <BehaviorReference Name="WalkLeft"   Frequency="20"/>
+        <BehaviorReference Name="WalkRight"  Frequency="20"/>
       </NextBehaviorList>
     </Behavior>
 
@@ -28,9 +43,10 @@
       <NextBehaviorList>
         <BehaviorReference Name="WallClingRight" Frequency="9999"
             Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 38}"/>
-        <BehaviorReference Name="Stand"          Frequency="30"/>
-        <BehaviorReference Name="WalkLeft"       Frequency="20"/>
-        <BehaviorReference Name="WalkRight"      Frequency="20"/>
+        <BehaviorReference Name="Stand"      Frequency="15"/>
+        <BehaviorReference Name="StandRight" Frequency="15"/>
+        <BehaviorReference Name="WalkLeft"   Frequency="20"/>
+        <BehaviorReference Name="WalkRight"  Frequency="20"/>
       </NextBehaviorList>
     </Behavior>
 
@@ -53,7 +69,8 @@
             Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 38}"/>
         <BehaviorReference Name="WallClingRight" Frequency="9999"
             Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 38}"/>
-        <BehaviorReference Name="Stand" Frequency="1"/>
+        <BehaviorReference Name="Stand"      Frequency="1"/>
+        <BehaviorReference Name="StandRight" Frequency="1"/>
       </NextBehaviorList>
     </Behavior>
 
@@ -63,7 +80,8 @@
             Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 38}"/>
         <BehaviorReference Name="WallClingRight" Frequency="9999"
             Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 38}"/>
-        <BehaviorReference Name="Stand" Frequency="1"/>
+        <BehaviorReference Name="Stand"      Frequency="1"/>
+        <BehaviorReference Name="StandRight" Frequency="1"/>
       </NextBehaviorList>
     </Behavior>
 
