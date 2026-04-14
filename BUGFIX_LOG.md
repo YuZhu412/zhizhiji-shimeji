@@ -732,7 +732,126 @@ WallClingLeft / WallClingRight
 
 ---
 
-# Bug #3：ham WallCling 贴墙方向错误
+# Bug #3：ham 走到边界后未触发 WallCling，从屏幕顶部重新掉落
+
+## 问题描述
+
+ham 角色自动行走到屏幕左右边界时，不触发 WallCling，而是直接从屏幕顶部重新掉落；zhizhiji 在相同配置下能正常触发 WallCling。
+
+---
+
+## 最终根本原因（一句话）
+
+> **ham 的 Walk action 停止条件（`±25px`）与 NextBehaviorList 中 WallCling 触发条件（`±38px`）之间存在盲区：ham 在距墙 25px 处停下后，该位置处于 38px 的触发范围之外，导致 WallCling 条件永远不成立，Shimeji-ee 引擎转而触发 `Lost Ground`（位置超出工作区），将角色瞬间传送回顶部重新下落。**
+
+---
+
+## 排查过程
+
+### 阶段 1：现象对比
+
+- ham：`WalkLeft` 走到左边界 → 直接从屏幕顶部掉落（`Lost Ground` OOB 重置）
+- zhizhiji：`WalkLeft` 走到左边界 → 正常触发 `WallClingLeft` 并贴墙
+
+### 阶段 2：日志分析
+
+读取 `ShimejieeLog0.log`，发现 ham 的日志序列为：
+
+```
+WalkRight → [Lost Ground 事件] → OOB 传送 → Fall（从顶部）
+```
+
+而 zhizhiji 的日志序列为：
+
+```
+WalkLeft → WallClingLeft
+```
+
+### 阶段 3：根因定位
+
+对比 `actions.xml` 中 WalkLeft/WalkRight 的 `Condition`：
+
+```xml
+<!-- ham（有问题时）-->
+<Action Name="WalkLeft"  Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.left + 25}"/>
+<Action Name="WalkRight" Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.right - 25}"/>
+```
+
+对比 `behaviors.xml` 中 WallCling 的触发条件：
+
+```xml
+<!-- ham（有问题时）-->
+<BehaviorReference Name="WallClingLeft"  Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 38}"/>
+<BehaviorReference Name="WallClingRight" Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 38}"/>
+```
+
+**关键盲区：**
+
+```
+Walk 停下位置：距墙 25px（anchor.x = left + 25）
+WallCling 触发范围：距墙 < 38px（anchor.x < left + 38）
+
+看似 25 < 38，应该能触发？
+```
+
+但 Shimeji-ee 的 `Move` action 在 Walk 结束时，会先执行一次 `Condition` 检查：如果此刻 anchor.x 已越过 `left + 25` 的边界（即角色在边界外），引擎触发 `Lost Ground` 事件并立即 OOB 传送，**NextBehaviorList 的条件根本不会被评估**。而 zhizhiji 的 WalkLeft 在选中时已处于墙边，预检直接命中 WallCling，绕过了 Lost Ground。
+
+---
+
+## 修复
+
+### 1. `actions.xml`：拓宽 Walk 停止距离
+
+```xml
+<!-- 修复前 -->
+<Action Name="WalkLeft"  Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.left + 25}"/>
+<Action Name="WalkRight" Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.right - 25}"/>
+
+<!-- 修复后 -->
+<Action Name="WalkLeft"  Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.left + 60}"/>
+<Action Name="WalkRight" Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.right - 60}"/>
+```
+
+角色在距墙 60px 处停下，给 NextBehaviorList 的评估留出充足余量。
+
+### 2. `behaviors.xml`：拓宽 WallCling 触发阈值
+
+将所有行为（Stand、StandRight、WalkLeft、WalkRight、Fall、Dragged）中的 WallCling 条件从 `±38` 扩大到 `±70`：
+
+```xml
+<!-- 修复前 -->
+<BehaviorReference Name="WallClingLeft"  Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 38}"/>
+<BehaviorReference Name="WallClingRight" Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 38}"/>
+
+<!-- 修复后 -->
+<BehaviorReference Name="WallClingLeft"  Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 70}"/>
+<BehaviorReference Name="WallClingRight" Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 70}"/>
+```
+
+两者配合，确保 Walk 停下后（距墙 60px）处于 WallCling 触发区间（70px）内。
+
+---
+
+## 修复后的效果
+
+```
+WalkLeft 走到 left + 60 处停下
+  → NextBehaviorList 评估
+  → anchor.x < left + 70 → WallClingLeft 命中（Frequency=9999）
+  → 立即贴左墙 ✅
+```
+
+---
+
+## 经验教训
+
+1. **`Lost Ground` 优先于 `NextBehaviorList`**：`Move` action 结束时若角色位置超出工作区，引擎触发 OOB 传送，NextBehaviorList 不会被执行。必须保证 Walk 停止位置在工作区边界内。
+2. **Walk 停止条件与 WallCling 触发条件必须有重叠区间**：停止条件（`left + N`）要小于触发条件（`left + M`），且 N 要给 Walk 执行期间的累计位移留出足够余量。
+3. **相同配置两个角色行为不同，说明触发时机不同**：zhizhiji 在选中 WalkLeft 时已在边界附近（预检即触发 WallCling），ham 是在行走过程中到达边界（需要靠 NextBehaviorList 触发），两者路径不同。
+
+---
+
+# Bug #4：ham WallCling 贴墙方向错误
 
 ## 问题描述
 
@@ -791,7 +910,7 @@ cling_right = cling_base.rotate(-90, expand=True).resize(...)
 
 ---
 
-## 经验教训
+## Bug #4 经验教训
 
 1. **不要凭直觉猜测旋转方向**：PIL 的 `rotate()` 方向是逆时针正，容易与直觉相反。修改前先用小测试图验证。
 2. **"随机反"≠图片文件问题**：如果问题是偶发性的，更可能是 behaviors.xml 的条件判断在某些位置边界产生误触发，而不是图片本身的朝向。

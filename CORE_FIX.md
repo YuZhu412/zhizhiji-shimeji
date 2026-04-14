@@ -179,7 +179,60 @@ mouseReleased() 触发
 
 ---
 
-# Bug #3：ham WallCling 贴墙方向错误
+# Bug #3：ham 走到边界后未触发 WallCling，从屏幕顶部重新掉落
+
+## 症状
+
+ham 自动行走到屏幕边界后，不贴墙，而是从屏幕顶部重新掉落（OOB 重置）；zhizhiji 相同配置下正常触发 WallCling。
+
+---
+
+## 根因
+
+Walk 停止条件（`±25px`）与 WallCling 触发条件（`±38px`）之间的执行顺序存在盲区：
+
+- ham 行走中途到达边界 → 引擎触发 `Lost Ground`（OOB 传送）→ **NextBehaviorList 不被评估**
+- zhizhiji 在选中 WalkLeft 时已在边界，预检即命中 WallCling，走不同的代码路径
+
+`Move` action 的 `Lost Ground` 事件优先于 `NextBehaviorList` 的条件评估。
+
+---
+
+## 修复
+
+### `actions.xml`（ham 专用）— 拓宽 Walk 停止距离
+
+```xml
+<!-- 修复前 -->
+<Action Name="WalkLeft"  Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.left + 25}"/>
+<Action Name="WalkRight" Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.right - 25}"/>
+
+<!-- 修复后 -->
+<Action Name="WalkLeft"  Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.left + 60}"/>
+<Action Name="WalkRight" Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.right - 60}"/>
+```
+
+### `behaviors.xml`（ham 专用）— 拓宽 WallCling 触发阈值
+
+所有行为（Stand、StandRight、WalkLeft、WalkRight、Fall、Dragged）中：
+
+```xml
+<!-- 修复前 -->
+<BehaviorReference Name="WallClingLeft"  Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 38}"/>
+<BehaviorReference Name="WallClingRight" Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 38}"/>
+
+<!-- 修复后 -->
+<BehaviorReference Name="WallClingLeft"  Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 70}"/>
+<BehaviorReference Name="WallClingRight" Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 70}"/>
+```
+
+Walk 停在 60px 处，WallCling 触发范围覆盖到 70px，两者有 10px 的安全重叠区间。
+
+> ⚠️ 此修复**仅应用于 ham**，zhizhiji 保留原值（`±25` / `±38`）。
+
+---
+
+# Bug #4：ham WallCling 贴墙方向错误
 
 ## 症状
 
