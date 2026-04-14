@@ -176,3 +176,47 @@ mouseReleased() 触发
 ```
 
 `Frequency="9999"` 保证在条件成立时 WallCling 被选中的概率约为 99.99%。
+
+---
+
+# Bug #3：ham WallCling 贴墙方向错误
+
+## 症状
+
+ham 贴左墙时猪身朝左（应朝右），贴右墙时猪身朝右（应朝左）——方向与所贴墙相反。
+
+---
+
+## 根因
+
+`process_ham.py` 中的旋转方向原本是正确的，误操作将其交换后导致方向全部反转。
+
+PIL 的 `rotate()` 以**逆时针**为正方向：
+
+| 调用 | 等效 | 躺平猪旋转后朝向 |
+|------|------|-----------------|
+| `rotate(-90)` | 顺时针 90° | 猪腹朝右 → 适合贴**左**墙 ✅ |
+| `rotate(90)`  | 逆时针 90° | 猪腹朝左 → 适合贴**右**墙 ✅ |
+
+---
+
+## 修复
+
+将 `process_ham.py` 恢复为原始旋转方向：
+
+```python
+# process_ham.py — wall_cling 生成部分（正确版本）
+cling_left  = cling_base.rotate(-90, expand=True).resize((160, 160), Image.LANCZOS)
+save(cling_left, "wall_cling_left.png")
+
+cling_right = cling_base.rotate(90, expand=True).resize((160, 160), Image.LANCZOS)
+save(cling_right, "wall_cling_right.png")
+```
+
+重新执行脚本并部署后，贴墙方向恢复正常。
+
+---
+
+## 注意
+
+`wall_cling_left.png` / `wall_cling_right.png` 的旋转方向**不可修改**。如需调整姿势，应修改原始素材 `raw/ham/白底/趴着wallcling 白底.png`，而非修改脚本中的旋转角度。

@@ -729,3 +729,70 @@ WallClingLeft / WallClingRight
 4. **Duration 的单位是 tick（40ms），不是秒**：`Duration="1"` = 40ms，`Duration="600"` = 24 秒。设置极大值（`Duration="999999"` ≈ 11 小时）是实现"无限等待用户交互"的有效方法。
 
 5. **DPI 缩放影响 anchor 偏移量**：`Dragged.java` 的 `DEFAULT_OFFSETY=120`，乘以 DPI 缩放 1.75 = 210 像素。放手时 anchor.y = cursor.y + 210，在屏幕下方拖拽时 anchor 可能超出 workArea 底部，触发 OOB 重置——这是另一个潜在的下落原因，但在本次修复中未复现（因为 Thrown 的 imageAnchor.y=160 使 getBounds().getY() 有足够余量）。
+
+---
+
+# Bug #3：ham WallCling 贴墙方向错误
+
+## 问题描述
+
+ham 角色贴墙（WallClingLeft / WallClingRight）时，猪身朝向与实际所贴的墙相反——贴左墙时猪身朝左（应朝右/中央），贴右墙时猪身朝右（应朝左/中央）。
+
+---
+
+## 最终根本原因（一句话）
+
+> **`process_ham.py` 中生成 `wall_cling_left.png` / `wall_cling_right.png` 时，`rotate(-90)` 和 `rotate(90)` 的语义理解正确，图片生成本身没有问题。错误修复尝试（交换两者）才是导致"方向全部反转"的原因；还原后问题消失。**
+
+---
+
+## 排查过程
+
+### 阶段 1：初步报告
+
+用户反馈 ham 触发 WallCling 后方向反了（随机出现）。
+
+### 阶段 2：错误修复（引入新 Bug）
+
+误判为 `process_ham.py` 旋转方向写反，将：
+
+```python
+# 原始（正确）
+cling_left  = cling_base.rotate(-90, expand=True).resize(...)
+cling_right = cling_base.rotate( 90, expand=True).resize(...)
+```
+
+改为：
+
+```python
+# 错误修改
+cling_left  = cling_base.rotate( 90, expand=True).resize(...)
+cling_right = cling_base.rotate(-90, expand=True).resize(...)
+```
+
+重新生成后，方向由"随机反"变为"始终全反"，问题加重。
+
+### 阶段 3：还原（正确修复）
+
+将 `process_ham.py` 恢复为原始旋转方向（`rotate(-90)` 对应 left，`rotate(90)` 对应 right），重新执行脚本并部署，问题消除。
+
+---
+
+## 根本原因分析
+
+`PIL.Image.rotate(angle)` 以**逆时针**为正方向：
+
+| 调用 | 等效 | 躺平猪旋转后朝向 |
+|------|------|-----------------|
+| `rotate(-90)` | 顺时针 90° | 猪腹朝右 → 适合贴**左**墙 ✅ |
+| `rotate(90)`  | 逆时针 90° | 猪腹朝左 → 适合贴**右**墙 ✅ |
+
+原始代码是正确的，不应修改。
+
+---
+
+## 经验教训
+
+1. **不要凭直觉猜测旋转方向**：PIL 的 `rotate()` 方向是逆时针正，容易与直觉相反。修改前先用小测试图验证。
+2. **"随机反"≠图片文件问题**：如果问题是偶发性的，更可能是 behaviors.xml 的条件判断在某些位置边界产生误触发，而不是图片本身的朝向。
+3. **修改 process_ham.py 后必须立即验证视觉结果**：脚本生成的图片是不可见的数值变换，必须在游戏中目视确认方向才能判断对错。
