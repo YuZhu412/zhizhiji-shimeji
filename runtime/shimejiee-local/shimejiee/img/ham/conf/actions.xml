@@ -17,7 +17,7 @@
     </Action>
 
     <Action Name="WalkLeft" Type="Move" BorderType="Floor" Duration="175"
-            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.left + 25}">
+            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.left + 60}">
       <Animation>
         <Pose Image="/walk_right_01.png" ImageAnchor="80,160" Velocity="-3,0" Duration="8"/>
         <Pose Image="/walk_right_02.png" ImageAnchor="80,160" Velocity="-3,0" Duration="8"/>
@@ -27,7 +27,7 @@
     </Action>
 
     <Action Name="WalkRight" Type="Move" BorderType="Floor" Duration="175"
-            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.right - 25}">
+            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.right - 60}">
       <Animation>
         <Pose Image="/walk_left_01.png" ImageAnchor="80,160" Velocity="3,0" Duration="8"/>
         <Pose Image="/walk_left_02.png" ImageAnchor="80,160" Velocity="3,0" Duration="8"/>
