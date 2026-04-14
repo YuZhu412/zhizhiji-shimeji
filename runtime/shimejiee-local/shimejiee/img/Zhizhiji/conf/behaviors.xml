@@ -6,9 +6,9 @@
     <Behavior Name="Stand" Frequency="15" Action="Stand">
       <NextBehaviorList>
         <BehaviorReference Name="WallClingLeft"  Frequency="9999"
-            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 38}"/>
+            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 70}"/>
         <BehaviorReference Name="WallClingRight" Frequency="9999"
-            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 38}"/>
+            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 70}"/>
         <BehaviorReference Name="WalkLeft"  Frequency="25"/>
         <BehaviorReference Name="WalkRight" Frequency="25"/>
         <BehaviorReference Name="Stand"     Frequency="50"/>
@@ -19,9 +19,9 @@
     <Behavior Name="StandRight" Frequency="15" Action="StandRight">
       <NextBehaviorList>
         <BehaviorReference Name="WallClingLeft"  Frequency="9999"
-            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 38}"/>
+            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 70}"/>
         <BehaviorReference Name="WallClingRight" Frequency="9999"
-            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 38}"/>
+            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 70}"/>
         <BehaviorReference Name="WalkLeft"   Frequency="25"/>
         <BehaviorReference Name="WalkRight"  Frequency="25"/>
         <BehaviorReference Name="StandRight" Frequency="50"/>
@@ -31,7 +31,7 @@
     <Behavior Name="WalkLeft" Frequency="35" Action="WalkLeft">
       <NextBehaviorList>
         <BehaviorReference Name="WallClingLeft" Frequency="9999"
-            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 38}"/>
+            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 70}"/>
         <BehaviorReference Name="Stand"      Frequency="15"/>
         <BehaviorReference Name="StandRight" Frequency="15"/>
         <BehaviorReference Name="WalkLeft"   Frequency="20"/>
@@ -42,7 +42,7 @@
     <Behavior Name="WalkRight" Frequency="35" Action="WalkRight">
       <NextBehaviorList>
         <BehaviorReference Name="WallClingRight" Frequency="9999"
-            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 38}"/>
+            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 70}"/>
         <BehaviorReference Name="Stand"      Frequency="15"/>
         <BehaviorReference Name="StandRight" Frequency="15"/>
         <BehaviorReference Name="WalkLeft"   Frequency="20"/>
@@ -66,9 +66,9 @@
     <Behavior Name="Fall" Frequency="0" Action="Fall">
       <NextBehaviorList>
         <BehaviorReference Name="WallClingLeft"  Frequency="9999"
-            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 38}"/>
+            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 70}"/>
         <BehaviorReference Name="WallClingRight" Frequency="9999"
-            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 38}"/>
+            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 70}"/>
         <BehaviorReference Name="Stand"      Frequency="1"/>
         <BehaviorReference Name="StandRight" Frequency="1"/>
       </NextBehaviorList>
@@ -77,9 +77,9 @@
     <Behavior Name="Dragged" Frequency="0" Action="Dragged">
       <NextBehaviorList>
         <BehaviorReference Name="WallClingLeft"  Frequency="9999"
-            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 38}"/>
+            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 70}"/>
         <BehaviorReference Name="WallClingRight" Frequency="9999"
-            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 38}"/>
+            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 70}"/>
         <BehaviorReference Name="Stand"      Frequency="1"/>
         <BehaviorReference Name="StandRight" Frequency="1"/>
       </NextBehaviorList>
