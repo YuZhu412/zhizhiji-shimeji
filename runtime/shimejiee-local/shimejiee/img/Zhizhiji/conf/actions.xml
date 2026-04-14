@@ -9,6 +9,13 @@
       </Animation>
     </Action>
 
+    <Action Name="StandRight" Type="Stay" BorderType="Floor" Duration="600">
+      <Animation>
+        <Pose Image="/idle_01_r.png" ImageAnchor="80,160" Velocity="0,0" Duration="50"/>
+        <Pose Image="/idle_02_r.png" ImageAnchor="80,160" Velocity="0,0" Duration="50"/>
+      </Animation>
+    </Action>
+
     <Action Name="WalkLeft" Type="Move" BorderType="Floor" Duration="175"
             Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.left + 25}">
       <Animation>
