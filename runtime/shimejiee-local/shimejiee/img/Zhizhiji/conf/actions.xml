@@ -16,8 +16,8 @@
       </Animation>
     </Action>
 
-    <Action Name="WalkLeft" Type="Move" BorderType="Floor" Duration="175"
-            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.left + 25}">
+    <Action Name="WalkLeft" Type="Move" BorderType="Floor" Duration="60"
+            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.left + 60}">
       <Animation>
         <Pose Image="/walk_right_01.png" ImageAnchor="80,160" Velocity="-3,0" Duration="8"/>
         <Pose Image="/walk_right_02.png" ImageAnchor="80,160" Velocity="-3,0" Duration="8"/>
@@ -26,8 +26,8 @@
       </Animation>
     </Action>
 
-    <Action Name="WalkRight" Type="Move" BorderType="Floor" Duration="175"
-            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.right - 25}">
+    <Action Name="WalkRight" Type="Move" BorderType="Floor" Duration="60"
+            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.right - 60}">
       <Animation>
         <Pose Image="/walk_left_01.png" ImageAnchor="80,160" Velocity="3,0" Duration="8"/>
         <Pose Image="/walk_left_02.png" ImageAnchor="80,160" Velocity="3,0" Duration="8"/>
@@ -45,6 +45,20 @@
     <Action Name="WallClingRight" Type="Stay" Duration="999999">
       <Animation>
         <Pose Image="/wall_cling_right.png" ImageAnchor="56,70" Velocity="0,0" Duration="50"/>
+      </Animation>
+    </Action>
+
+    <!-- 大笑挥手：站立触发的随机互动动作 -->
+    <Action Name="Laugh" Type="Stay" BorderType="Floor" Duration="300">
+      <Animation>
+        <Pose Image="/laugh_01.png" ImageAnchor="80,160" Velocity="0,0" Duration="50"/>
+      </Animation>
+    </Action>
+
+    <!-- 睡觉：站立触发的随机休眠动作 -->
+    <Action Name="Sleep" Type="Stay" BorderType="Floor" Duration="600">
+      <Animation>
+        <Pose Image="/sleep_01.png" ImageAnchor="80,160" Velocity="0,0" Duration="50"/>
       </Animation>
     </Action>
 

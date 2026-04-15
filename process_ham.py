@@ -185,10 +185,10 @@ for i in range(1, 5):
 cling_base  = fit_into_canvas(cling_raw, 160, 160, "center_center")
 save(cling_base, "wall_cling.png")
 
-cling_left  = cling_base.rotate(90, expand=True).resize((160, 160), Image.LANCZOS)
+cling_left  = cling_base.rotate(-90, expand=True).resize((160, 160), Image.LANCZOS)
 save(cling_left, "wall_cling_left.png")
 
-cling_right = cling_base.rotate(-90, expand=True).resize((160, 160), Image.LANCZOS)
+cling_right = cling_base.rotate(90, expand=True).resize((160, 160), Image.LANCZOS)
 save(cling_right, "wall_cling_right.png")
 
 # ── 部署到运行目录 ────────────────────────────────────────────────────────────
