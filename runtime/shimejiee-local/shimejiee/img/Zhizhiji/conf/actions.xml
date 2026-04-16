@@ -56,7 +56,7 @@
     </Action>
 
     <!-- 睡觉：站立触发的随机休眠动作 -->
-    <Action Name="Sleep" Type="Stay" BorderType="Floor" Duration="600">
+    <Action Name="Sleep" Type="Stay" BorderType="Floor" Duration="3600">
       <Animation>
         <Pose Image="/sleep_01.png" ImageAnchor="80,160" Velocity="0,0" Duration="50"/>
       </Animation>
