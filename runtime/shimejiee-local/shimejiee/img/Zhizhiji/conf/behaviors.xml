@@ -12,7 +12,8 @@
         <BehaviorReference Name="WalkLeft"  Frequency="10"/>
         <BehaviorReference Name="WalkRight" Frequency="10"/>
         <BehaviorReference Name="Sleep"     Frequency="15"/>
-        <BehaviorReference Name="Stand"     Frequency="65"/>
+        <BehaviorReference Name="Eat"       Frequency="15"/>
+        <BehaviorReference Name="Stand"     Frequency="50"/>
       </NextBehaviorList>
     </Behavior>
 
@@ -26,7 +27,8 @@
         <BehaviorReference Name="WalkLeft"   Frequency="10"/>
         <BehaviorReference Name="WalkRight"  Frequency="10"/>
         <BehaviorReference Name="Sleep"      Frequency="15"/>
-        <BehaviorReference Name="StandRight" Frequency="65"/>
+        <BehaviorReference Name="Eat"        Frequency="15"/>
+        <BehaviorReference Name="StandRight" Frequency="50"/>
       </NextBehaviorList>
     </Behavior>
 
@@ -65,6 +67,15 @@
 
     <!-- 鐫¤锛氭挱鏀惧畬姣曞悗鍥炲埌 Stand/StandRight -->
     <Behavior Name="Sleep" Frequency="0" Action="Sleep">
+      <NextBehaviorList>
+        <BehaviorReference Name="Stand"      Frequency="50"/>
+        <BehaviorReference Name="StandRight" Frequency="50"/>
+      </NextBehaviorList>
+    </Behavior>
+
+
+    <!-- 吃饭：播放完毕后回到 Stand/StandRight -->
+    <Behavior Name="Eat" Frequency="0" Action="Eat">
       <NextBehaviorList>
         <BehaviorReference Name="Stand"      Frequency="50"/>
         <BehaviorReference Name="StandRight" Frequency="50"/>

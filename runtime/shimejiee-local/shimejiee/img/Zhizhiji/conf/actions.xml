@@ -62,6 +62,13 @@
       </Animation>
     </Action>
 
+    <!-- 吃饭：站立触发的随机休闲动作，约1分钟（3600帧@60fps） -->
+    <Action Name="Eat" Type="Stay" BorderType="Floor" Duration="3600">
+      <Animation>
+        <Pose Image="/eat_01.png" ImageAnchor="80,159" Velocity="0,0" Duration="50"/>
+      </Animation>
+    </Action>
+
     <Action Name="Fall" Type="Embedded" Loop="true"
             Class="com.group_finity.mascot.action.Fall"
             InitialVX="0" InitialVY="0"
