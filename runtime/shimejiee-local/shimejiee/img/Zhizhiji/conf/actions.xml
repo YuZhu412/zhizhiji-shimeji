@@ -79,29 +79,23 @@
     </Action>
 
     <!-- ScanGreet：扫描持 "greet" affordance 的 mascot（ham）并跑过去 -->
-    <!-- ScanMove.tick 会根据 anchor.x vs targetX 主动 setLookRight。 -->
-    <!-- Pose.next 里 dx 会被 lookRight 取反：newX = x + (lookRight ? -dx : +dx)。 -->
-    <!-- 所以"朝目标走"永远是 Velocity 负数（不论 target 在左还是右）。 -->
-    <!-- 图像约定：walk_right_*.png 实际朝左；walk_left_*.png 实际朝右。 -->
+    <!-- ScanMove.tick 每 tick 根据 anchor.x vs targetX 主动 setLookRight，并做朝向翻转。 -->
+    <!-- Pose.next 位移：newX = x + (lookRight ? -dx : +dx)，所以 Velocity 固定取负即可"朝目标走"。 -->
+    <!-- 图像方向：ImagePairLoader 只加载原图，另一向自动 flip。 -->
+    <!-- walk_right_*.png 原图实际朝左（与 WalkLeft Action 用它 + lookRight=false 一致）； -->
+    <!-- 故这里统一用 walk_right_*.png：lookRight=false 时原图（朝左），lookRight=true 时 flip（朝右）。 -->
+    <!-- 不用条件分支，单 Animation 交给 ScanMove 的 setLookRight 自动翻转朝向。 -->
     <Action Name="ScanGreet" Type="Embedded"
             Class="com.group_finity.mascot.action.ScanMove"
             Affordance="greet"
             Behavior="GreetAct"
             TargetBehavior="GreetReact"
             TargetLook="true">
-      <!-- target 在左：lookRight=false，用朝左的图，dx=-4 → newX=x-4 向左走 -->
-      <Animation Condition="#{TargetX &lt; mascot.anchor.x}">
+      <Animation>
         <Pose Image="/walk_right_01.png" ImageAnchor="80,160" Velocity="-4,0" Duration="8"/>
         <Pose Image="/walk_right_02.png" ImageAnchor="80,160" Velocity="-4,0" Duration="8"/>
         <Pose Image="/walk_right_03.png" ImageAnchor="80,160" Velocity="-4,0" Duration="8"/>
         <Pose Image="/walk_right_04.png" ImageAnchor="80,160" Velocity="-4,0" Duration="8"/>
-      </Animation>
-      <!-- target 在右：lookRight=true，用朝右的图，dx=-4 经翻转变+4 → newX=x+4 向右走 -->
-      <Animation Condition="#{TargetX &gt;= mascot.anchor.x}">
-        <Pose Image="/walk_left_01.png" ImageAnchor="80,160" Velocity="-4,0" Duration="8"/>
-        <Pose Image="/walk_left_02.png" ImageAnchor="80,160" Velocity="-4,0" Duration="8"/>
-        <Pose Image="/walk_left_03.png" ImageAnchor="80,160" Velocity="-4,0" Duration="8"/>
-        <Pose Image="/walk_left_04.png" ImageAnchor="80,160" Velocity="-4,0" Duration="8"/>
       </Animation>
     </Action>
 
