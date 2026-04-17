@@ -1,4 +1,4 @@
-# watch_and_sync.ps1
+﻿# watch_and_sync.ps1
 # 自动监听 zhizhiji-shimeji GitHub 仓库更新，同步文件到本地 Shimeji-ee 目录
 # 用法：在 PowerShell 中运行此脚本（需要已安装 Git）
 #   .\watch_and_sync.ps1
@@ -9,7 +9,7 @@
 
 param(
     [string]$RepoDir   = $PSScriptRoot,
-    [string]$ShimejiDir = "C:\path\to\Shimeji-ee\img",   # ← 改成你本地的路径
+    [string]$ShimejiDir = "C:\Users\TCL\Desktop\zhizhiji-final\runtime\shimejiee-local\shimejiee\img",   # ← 已设为本机路径
     [int]   $Interval  = 60
 )
 

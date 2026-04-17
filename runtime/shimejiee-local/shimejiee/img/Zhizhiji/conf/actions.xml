@@ -16,8 +16,10 @@
       </Animation>
     </Action>
 
-    <Action Name="WalkLeft" Type="Move" BorderType="Floor" Duration="60"
-            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.left + 60}">
+    <!-- Walk 不加 BorderType="Floor"：多段 Floor 之间会误判 LostGround -->
+    <!-- 边界 +130：zhizhiji 图像不透明宽度约 130px (opaqueX=[15..144])，需留足 WallCling 切换余量 -->
+    <Action Name="WalkLeft" Type="Move" Duration="60"
+            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.left + 130}">
       <Animation>
         <Pose Image="/walk_right_01.png" ImageAnchor="80,160" Velocity="-3,0" Duration="8"/>
         <Pose Image="/walk_right_02.png" ImageAnchor="80,160" Velocity="-3,0" Duration="8"/>
@@ -26,8 +28,8 @@
       </Animation>
     </Action>
 
-    <Action Name="WalkRight" Type="Move" BorderType="Floor" Duration="60"
-            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.right - 60}">
+    <Action Name="WalkRight" Type="Move" Duration="60"
+            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.right - 130}">
       <Animation>
         <Pose Image="/walk_left_01.png" ImageAnchor="80,160" Velocity="3,0" Duration="8"/>
         <Pose Image="/walk_left_02.png" ImageAnchor="80,160" Velocity="3,0" Duration="8"/>
@@ -73,6 +75,46 @@
     <Action Name="Eat" Type="Stay" BorderType="Floor" Duration="3600">
       <Animation>
         <Pose Image="/eat_01.png" ImageAnchor="80,159" Velocity="0,0" Duration="50"/>
+      </Animation>
+    </Action>
+
+    <!-- ScanGreet：扫描持 "greet" affordance 的 mascot（ham）并跑过去 -->
+    <!-- ScanMove.tick 会根据 anchor.x vs targetX 主动 setLookRight。 -->
+    <!-- Pose.next 里 dx 会被 lookRight 取反：newX = x + (lookRight ? -dx : +dx)。 -->
+    <!-- 所以"朝目标走"永远是 Velocity 负数（不论 target 在左还是右）。 -->
+    <!-- 图像约定：walk_right_*.png 实际朝左；walk_left_*.png 实际朝右。 -->
+    <Action Name="ScanGreet" Type="Embedded"
+            Class="com.group_finity.mascot.action.ScanMove"
+            Affordance="greet"
+            Behavior="GreetAct"
+            TargetBehavior="GreetReact"
+            TargetLook="true">
+      <!-- target 在左：lookRight=false，用朝左的图，dx=-4 → newX=x-4 向左走 -->
+      <Animation Condition="#{TargetX &lt; mascot.anchor.x}">
+        <Pose Image="/walk_right_01.png" ImageAnchor="80,160" Velocity="-4,0" Duration="8"/>
+        <Pose Image="/walk_right_02.png" ImageAnchor="80,160" Velocity="-4,0" Duration="8"/>
+        <Pose Image="/walk_right_03.png" ImageAnchor="80,160" Velocity="-4,0" Duration="8"/>
+        <Pose Image="/walk_right_04.png" ImageAnchor="80,160" Velocity="-4,0" Duration="8"/>
+      </Animation>
+      <!-- target 在右：lookRight=true，用朝右的图，dx=-4 经翻转变+4 → newX=x+4 向右走 -->
+      <Animation Condition="#{TargetX &gt;= mascot.anchor.x}">
+        <Pose Image="/walk_left_01.png" ImageAnchor="80,160" Velocity="-4,0" Duration="8"/>
+        <Pose Image="/walk_left_02.png" ImageAnchor="80,160" Velocity="-4,0" Duration="8"/>
+        <Pose Image="/walk_left_03.png" ImageAnchor="80,160" Velocity="-4,0" Duration="8"/>
+        <Pose Image="/walk_left_04.png" ImageAnchor="80,160" Velocity="-4,0" Duration="8"/>
+      </Animation>
+    </Action>
+
+    <!-- GreetAct：到达 ham 后的大笑动画 -->
+    <!-- 到达时 zhi 的 anchor 被 ScanMove 强制设为与 ham 完全重合。 -->
+    <!-- 第一帧用正 dx 给一次"往后退"的位移：Pose.next 公式 newX=x+(lookRight?-dx:+dx) -->
+    <!-- 正 dx 方向：lookRight=true (从左追来) → newX 减 → zhi 退到 ham 左侧 -->
+    <!-- 正 dx 方向：lookRight=false (从右追来) → newX 加 → zhi 退到 ham 右侧 -->
+    <!-- 130px 刚好让两个 160x160 的 sprite 紧贴不重叠 -->
+    <Action Name="GreetAct" Type="Stay" BorderType="Floor" Duration="300">
+      <Animation>
+        <Pose Image="/laugh_01.png" ImageAnchor="80,160" Velocity="130,0" Duration="1"/>
+        <Pose Image="/laugh_01.png" ImageAnchor="80,160" Velocity="0,0" Duration="50"/>
       </Animation>
     </Action>
 

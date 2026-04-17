@@ -16,8 +16,10 @@
       </Animation>
     </Action>
 
-    <Action Name="WalkLeft" Type="Move" BorderType="Floor" Duration="175"
-            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.left + 60}">
+    <!-- Walk 不加 BorderType="Floor"：多段 Floor 之间会误判 LostGround -->
+    <!-- 边界 +150：ham 图像不透明宽度占满 160，需留足 WallCling 切换余量 -->
+    <Action Name="WalkLeft" Type="Move" Duration="175"
+            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.left + 150}">
       <Animation>
         <Pose Image="/walk_right_01.png" ImageAnchor="80,160" Velocity="-3,0" Duration="8"/>
         <Pose Image="/walk_right_02.png" ImageAnchor="80,160" Velocity="-3,0" Duration="8"/>
@@ -26,8 +28,8 @@
       </Animation>
     </Action>
 
-    <Action Name="WalkRight" Type="Move" BorderType="Floor" Duration="175"
-            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.right - 60}">
+    <Action Name="WalkRight" Type="Move" Duration="175"
+            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.right - 150}">
       <Animation>
         <Pose Image="/walk_left_01.png" ImageAnchor="80,160" Velocity="3,0" Duration="8"/>
         <Pose Image="/walk_left_02.png" ImageAnchor="80,160" Velocity="3,0" Duration="8"/>
@@ -45,6 +47,23 @@
     <Action Name="WallClingRight" Type="Stay" Duration="999999">
       <Animation>
         <Pose Image="/wall_cling_right.png" ImageAnchor="112,140" Velocity="0,0" Duration="50"/>
+      </Animation>
+    </Action>
+
+    <!-- Greet 等待：ham 站定并广播 "greet" affordance，供 zhizhiji 的 ScanGreet 捕获 -->
+    <!-- Duration=400 ticks (~16s)，短一点可以多轮循环，增加被扫到的概率 -->
+    <Action Name="GreetWait" Type="Stay" BorderType="Floor" Duration="400"
+            Affordance="greet">
+      <Animation>
+        <Pose Image="/idle_01.png" ImageAnchor="80,160" Velocity="0,0" Duration="50"/>
+        <Pose Image="/idle_02.png" ImageAnchor="80,160" Velocity="0,0" Duration="50"/>
+      </Animation>
+    </Action>
+
+    <!-- Greet 击掌：被 ScanMove 的 TargetBehavior 强制跳转进入，播放击掌图 -->
+    <Action Name="GreetReact" Type="Stay" BorderType="Floor" Duration="300">
+      <Animation>
+        <Pose Image="/greet_01.png" ImageAnchor="80,160" Velocity="0,0" Duration="50"/>
       </Animation>
     </Action>
 
