@@ -111,10 +111,12 @@
     <!-- 正 dx 方向：lookRight=true (从左追来) → newX 减 → zhi 退到 ham 左侧 -->
     <!-- 正 dx 方向：lookRight=false (从右追来) → newX 加 → zhi 退到 ham 右侧 -->
     <!-- 130px 刚好让两个 160x160 的 sprite 紧贴不重叠 -->
+    <!-- 注意：新 Action 首个 tick getTime()=1（非 0），所以 pose1.Duration 必须 >=2 才能命中 t=1 -->
+    <!-- pose2.Duration 必须让 anim 总长 > Action Duration 否则循环回 pose1 导致持续后退 -->
     <Action Name="GreetAct" Type="Stay" BorderType="Floor" Duration="300">
       <Animation>
-        <Pose Image="/laugh_01.png" ImageAnchor="80,160" Velocity="130,0" Duration="1"/>
-        <Pose Image="/laugh_01.png" ImageAnchor="80,160" Velocity="0,0" Duration="50"/>
+        <Pose Image="/laugh_01.png" ImageAnchor="80,160" Velocity="130,0" Duration="2"/>
+        <Pose Image="/laugh_01.png" ImageAnchor="80,160" Velocity="0,0"   Duration="300"/>
       </Animation>
     </Action>
 
