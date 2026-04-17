@@ -6,16 +6,16 @@
     <Behavior Name="Stand" Frequency="15" Action="Stand">
       <NextBehaviorList>
         <BehaviorReference Name="WallClingLeft"  Frequency="9999"
-            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 90}"/>
+            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 130}"/>
         <BehaviorReference Name="WallClingRight" Frequency="9999"
-            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 90}"/>
-        <BehaviorReference Name="ScanGreet" Frequency="500"
+            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 130}"/>
+        <BehaviorReference Name="ScanGreet" Frequency="45"
             Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.left + 150 &amp;&amp; mascot.anchor.x &lt; mascot.environment.workArea.right - 150}"/>
         <BehaviorReference Name="WalkLeft"  Frequency="20"/>
         <BehaviorReference Name="WalkRight" Frequency="20"/>
-        <BehaviorReference Name="Sleep"     Frequency="3"/>
-        <BehaviorReference Name="Eat"       Frequency="3"/>
-        <BehaviorReference Name="PipiPlay"  Frequency="3"/>
+        <BehaviorReference Name="Sleep"     Frequency="12"/>
+        <BehaviorReference Name="Eat"       Frequency="12"/>
+        <BehaviorReference Name="PipiPlay"  Frequency="12"/>
         <BehaviorReference Name="Stand"     Frequency="35"/>
       </NextBehaviorList>
     </Behavior>
@@ -23,16 +23,16 @@
     <Behavior Name="StandRight" Frequency="15" Action="StandRight">
       <NextBehaviorList>
         <BehaviorReference Name="WallClingLeft"  Frequency="9999"
-            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 90}"/>
+            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 130}"/>
         <BehaviorReference Name="WallClingRight" Frequency="9999"
-            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 90}"/>
-        <BehaviorReference Name="ScanGreet"  Frequency="500"
+            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 130}"/>
+        <BehaviorReference Name="ScanGreet"  Frequency="45"
             Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.left + 150 &amp;&amp; mascot.anchor.x &lt; mascot.environment.workArea.right - 150}"/>
         <BehaviorReference Name="WalkLeft"   Frequency="20"/>
         <BehaviorReference Name="WalkRight"  Frequency="20"/>
-        <BehaviorReference Name="Sleep"      Frequency="3"/>
-        <BehaviorReference Name="Eat"        Frequency="3"/>
-        <BehaviorReference Name="PipiPlay"   Frequency="3"/>
+        <BehaviorReference Name="Sleep"      Frequency="12"/>
+        <BehaviorReference Name="Eat"        Frequency="12"/>
+        <BehaviorReference Name="PipiPlay"   Frequency="12"/>
         <BehaviorReference Name="StandRight" Frequency="35"/>
       </NextBehaviorList>
     </Behavior>
@@ -40,8 +40,8 @@
     <Behavior Name="WalkLeft" Frequency="35" Action="WalkLeft">
       <NextBehaviorList>
         <BehaviorReference Name="WallClingLeft" Frequency="9999"
-            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 90}"/>
-        <BehaviorReference Name="ScanGreet"  Frequency="500"
+            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 130}"/>
+        <BehaviorReference Name="ScanGreet"  Frequency="45"
             Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.left + 150 &amp;&amp; mascot.anchor.x &lt; mascot.environment.workArea.right - 150}"/>
         <BehaviorReference Name="Laugh"      Frequency="15"/>
         <BehaviorReference Name="Stand"      Frequency="13"/>
@@ -54,8 +54,8 @@
     <Behavior Name="WalkRight" Frequency="35" Action="WalkRight">
       <NextBehaviorList>
         <BehaviorReference Name="WallClingRight" Frequency="9999"
-            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 90}"/>
-        <BehaviorReference Name="ScanGreet"  Frequency="500"
+            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 130}"/>
+        <BehaviorReference Name="ScanGreet"  Frequency="45"
             Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.left + 150 &amp;&amp; mascot.anchor.x &lt; mascot.environment.workArea.right - 150}"/>
         <BehaviorReference Name="Laugh"      Frequency="15"/>
         <BehaviorReference Name="Stand"      Frequency="13"/>
@@ -69,9 +69,9 @@
     <Behavior Name="Laugh" Frequency="0" Action="Laugh">
       <NextBehaviorList>
         <BehaviorReference Name="WallClingLeft"  Frequency="9999"
-            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 90}"/>
+            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 130}"/>
         <BehaviorReference Name="WallClingRight" Frequency="9999"
-            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 90}"/>
+            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 130}"/>
         <BehaviorReference Name="Stand"      Frequency="50"/>
         <BehaviorReference Name="StandRight" Frequency="50"/>
       </NextBehaviorList>
@@ -80,9 +80,9 @@
     <Behavior Name="Sleep" Frequency="0" Action="Sleep">
       <NextBehaviorList>
         <BehaviorReference Name="WallClingLeft"  Frequency="9999"
-            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 90}"/>
+            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 130}"/>
         <BehaviorReference Name="WallClingRight" Frequency="9999"
-            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 90}"/>
+            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 130}"/>
         <BehaviorReference Name="Stand"      Frequency="50"/>
         <BehaviorReference Name="StandRight" Frequency="50"/>
       </NextBehaviorList>
@@ -91,9 +91,9 @@
     <Behavior Name="Eat" Frequency="0" Action="Eat">
       <NextBehaviorList>
         <BehaviorReference Name="WallClingLeft"  Frequency="9999"
-            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 90}"/>
+            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 130}"/>
         <BehaviorReference Name="WallClingRight" Frequency="9999"
-            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 90}"/>
+            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 130}"/>
         <BehaviorReference Name="Stand"      Frequency="50"/>
         <BehaviorReference Name="StandRight" Frequency="50"/>
       </NextBehaviorList>
@@ -102,9 +102,9 @@
     <Behavior Name="PipiPlay" Frequency="0" Action="PipiPlay">
       <NextBehaviorList>
         <BehaviorReference Name="WallClingLeft"  Frequency="9999"
-            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 90}"/>
+            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 130}"/>
         <BehaviorReference Name="WallClingRight" Frequency="9999"
-            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 90}"/>
+            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 130}"/>
         <BehaviorReference Name="Stand"      Frequency="50"/>
         <BehaviorReference Name="StandRight" Frequency="50"/>
       </NextBehaviorList>
@@ -114,9 +114,9 @@
     <Behavior Name="ScanGreet" Frequency="0" Action="ScanGreet">
       <NextBehaviorList>
         <BehaviorReference Name="WallClingLeft"  Frequency="9999"
-            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 90}"/>
+            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 130}"/>
         <BehaviorReference Name="WallClingRight" Frequency="9999"
-            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 90}"/>
+            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 130}"/>
         <BehaviorReference Name="Stand"      Frequency="50"/>
         <BehaviorReference Name="StandRight" Frequency="50"/>
       </NextBehaviorList>
@@ -126,9 +126,9 @@
     <Behavior Name="GreetAct" Frequency="0" Action="GreetAct">
       <NextBehaviorList>
         <BehaviorReference Name="WallClingLeft"  Frequency="9999"
-            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 90}"/>
+            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 130}"/>
         <BehaviorReference Name="WallClingRight" Frequency="9999"
-            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 90}"/>
+            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 130}"/>
         <BehaviorReference Name="Stand"      Frequency="50"/>
         <BehaviorReference Name="StandRight" Frequency="50"/>
       </NextBehaviorList>
@@ -150,9 +150,9 @@
     <Behavior Name="Fall" Frequency="0" Action="Fall">
       <NextBehaviorList>
         <BehaviorReference Name="WallClingLeft"  Frequency="9999"
-            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 90}"/>
+            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 130}"/>
         <BehaviorReference Name="WallClingRight" Frequency="9999"
-            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 90}"/>
+            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 130}"/>
         <BehaviorReference Name="Stand"      Frequency="1"/>
         <BehaviorReference Name="StandRight" Frequency="1"/>
       </NextBehaviorList>
@@ -161,9 +161,9 @@
     <Behavior Name="Dragged" Frequency="0" Action="Dragged">
       <NextBehaviorList>
         <BehaviorReference Name="WallClingLeft"  Frequency="9999"
-            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 90}"/>
+            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 130}"/>
         <BehaviorReference Name="WallClingRight" Frequency="9999"
-            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 90}"/>
+            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 130}"/>
         <BehaviorReference Name="Stand"      Frequency="1"/>
         <BehaviorReference Name="StandRight" Frequency="1"/>
       </NextBehaviorList>

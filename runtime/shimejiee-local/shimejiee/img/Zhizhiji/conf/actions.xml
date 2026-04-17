@@ -17,9 +17,11 @@
     </Action>
 
     <!-- Walk 不加 BorderType="Floor"：多段 Floor 之间会误判 LostGround -->
-    <!-- 边界 +130：zhizhiji 图像不透明宽度约 130px (opaqueX=[15..144])，需留足 WallCling 切换余量 -->
+    <!-- Duration=60, dx=3 → 每次最多走 180px，走完重新评估 Condition 和 NextBehaviorList -->
+    <!-- Condition ±300：启动时距墙 >= 300，走完 anchor.x >= 120，bounds 左沿 >= 40，绝不越界 -->
+    <!-- 配合 behaviors.xml WallCling 阈值 ±130（> Walk 停止点 120），Walk 结束可直接转 WallCling -->
     <Action Name="WalkLeft" Type="Move" Duration="60"
-            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.left + 130}">
+            Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.left + 300}">
       <Animation>
         <Pose Image="/walk_right_01.png" ImageAnchor="80,160" Velocity="-3,0" Duration="8"/>
         <Pose Image="/walk_right_02.png" ImageAnchor="80,160" Velocity="-3,0" Duration="8"/>
@@ -29,7 +31,7 @@
     </Action>
 
     <Action Name="WalkRight" Type="Move" Duration="60"
-            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.right - 130}">
+            Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.right - 300}">
       <Animation>
         <Pose Image="/walk_left_01.png" ImageAnchor="80,160" Velocity="3,0" Duration="8"/>
         <Pose Image="/walk_left_02.png" ImageAnchor="80,160" Velocity="3,0" Duration="8"/>

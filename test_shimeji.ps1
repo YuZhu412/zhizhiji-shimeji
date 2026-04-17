@@ -38,14 +38,14 @@ Get-ChildItem -Path $ShimejiDir -Filter "ShimejieeLog*.lck" -ErrorAction Silentl
 
 Write-Host "[2/5] Cleaning old log..."
 if (-not (Test-Path $BackupDir)) { New-Item -ItemType Directory -Path $BackupDir | Out-Null }
-if (Test-Path $Log0Path) {
-    $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
-    $backup = Join-Path $BackupDir "ShimejieeLog0-$stamp.log"
-    Copy-Item $Log0Path $backup -Force
-    Write-Host ("  backup to: " + $backup)
-    Remove-Item $Log0Path -Force -ErrorAction SilentlyContinue
+$stamp = Get-Date -Format "yyyyMMdd-HHmmss"
+Get-ChildItem -Path $ShimejiDir -Filter "ShimejieeLog*.log" -ErrorAction SilentlyContinue | ForEach-Object {
+    $backup = Join-Path $BackupDir ($_.BaseName + "-" + $stamp + ".log")
+    Copy-Item $_.FullName $backup -Force -ErrorAction SilentlyContinue
+    Remove-Item $_.FullName -Force -ErrorAction SilentlyContinue
 }
-if (Test-Path $Log1Path) { Remove-Item $Log1Path -Force -ErrorAction SilentlyContinue }
+Get-ChildItem -Path $ShimejiDir -Filter "ShimejieeLog*.lck" -ErrorAction SilentlyContinue |
+    Remove-Item -Force -ErrorAction SilentlyContinue
 
 Write-Host "[3/5] Starting Shimeji-ee.jar..."
 $startTime = Get-Date
@@ -82,12 +82,11 @@ if (-not $KeepRunning) {
 
 Write-Host "Analyzing log..."
 $logs = @()
-if (Test-Path $Log0Path) { $logs += Get-Content $Log0Path -Raw }
-if (Test-Path $Log1Path) {
-    $log1Info = Get-Item $Log1Path
-    if ($log1Info.LastWriteTime -gt $startTime) {
-        $logs += Get-Content $Log1Path -Raw
-    }
+$logFiles = Get-ChildItem -Path $ShimejiDir -Filter "ShimejieeLog*.log" -ErrorAction SilentlyContinue |
+    Sort-Object LastWriteTime
+foreach ($lf in $logFiles) {
+    Write-Host ("  read: " + $lf.Name + " (" + $lf.Length + " bytes)")
+    $logs += Get-Content $lf.FullName -Raw
 }
 $body = [string]::Join("`n", $logs)
 

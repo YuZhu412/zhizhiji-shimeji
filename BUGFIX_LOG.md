@@ -925,3 +925,474 @@ cling_right = cling_base.rotate(-90, expand=True).resize(...)
 1. **不要凭直觉猜测旋转方向**：PIL 的 `rotate()` 方向是逆时针正，容易与直觉相反。修改前先用小测试图验证。
 2. **"随机反"≠图片文件问题**：如果问题是偶发性的，更可能是 behaviors.xml 的条件判断在某些位置边界产生误触发，而不是图片本身的朝向。
 3. **修改 process_ham.py 后必须立即验证视觉结果**：脚本生成的图片是不可见的数值变换，必须在游戏中目视确认方向才能判断对错。
+
+---
+
+# Bug #5：吱吱吉 + ham 相遇击掌互动 — 连环坑总集
+
+## 新功能概述
+
+当屏幕上同时存在 ham 和 zhizhiji 时，两人会随机相遇并触发"击掌"互动：
+
+- **ham**：进入 `GreetWait` 行为广播 `Affordance="greet"`，等待被接近
+- **zhizhiji**：随机进入 `ScanGreet` 行为，用 `ScanMove` 扫到 ham 后**朝其走过去**
+- 到达后：zhizhiji 切入 `GreetAct` 播放 `laugh_01.png`（大笑），ham 切入 `GreetReact` 播放 `greet_01.png`（击掌，由 `raw/ham/ham击掌.jpg` 去白底加工而来）
+- 两人贴近但**静态错开**（不重叠）
+
+实现全部在 XML 配置层（`img/ham/conf/*.xml` + `img/Zhizhiji/conf/*.xml`），没有改任何 Java 源码。配套脚本：
+
+- `test_shimeji.ps1`：自动拉起/kill/抓日志并做统计
+- `watch_greet.ps1`：实时 tail 日志直到打满一轮 greet
+
+但从"写好配置"到"稳定触发 + 视觉正确"中间踩了 8 个非显式坑，逐个记录在下方。
+
+---
+
+## Bug #5.1：EL 条件里写 `and` 导致 `VariableException`
+
+### 现象
+
+Shimeji 启动后疯狂抛：
+
+```
+javax.el.ELException: javax.el.PropertyNotFoundException: ELResolver cannot handle a null base Object with identifier 'and'
+```
+
+相遇行为完全不触发。
+
+### 根因
+
+`behaviors.xml` 里为 `GreetWait` / `ScanGreet` 加的边界 Condition 写成了：
+
+```xml
+Condition="#{mascot.anchor.x > mascot.environment.workArea.left + 200 and mascot.anchor.x < mascot.environment.workArea.right - 200}"
+```
+
+Shimeji-ee 的 EL 引擎只支持 Java/JS 风格的 `&&` / `||`，不认 `and` / `or`。
+
+### 修复
+
+XML 里用 `&amp;&amp;`（`&&` 的 XML 转义）：
+
+```xml
+Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.left + 200 &amp;&amp; mascot.anchor.x &lt; mascot.environment.workArea.right - 200}"
+```
+
+---
+
+## Bug #5.2：Walk / WallCling 阈值按画布宽度算，还是 OOB
+
+### 现象
+
+两个角色走到屏幕边就直接抛 `Out of the screen bounds` → 从顶部重新掉落，完全跳过 WallCling。现象比 Bug #3 那版更严重，因为互动上线后增加了更多 Walk 触发机会。
+
+### 根因
+
+之前 Bug #3 只针对 ham，且阈值是按经验值 `±60` 调的。真正决定"何时抛 OOB"的是 **bounding box 触碰到 workArea 边**，而 bounding box 是**图片实际不透明像素的包围盒**，不是 160×160 画布。
+
+逐角色测了每帧 PNG 的不透明 X 区间：
+
+| 角色 | alpha≠0 的 X 范围 | anchor (80, 160) 到左沿 | 到右沿 |
+|------|--------------------|-------------------------|--------|
+| ham | `[0..159]`（几乎占满） | 80 | 79 |
+| zhizhiji | `[15..144]` | 65 | 64 |
+
+### 修复
+
+按实际不透明宽度 + 10px 安全重叠重算所有阈值：
+
+| 动作 | ham | zhizhiji |
+|------|-----|----------|
+| Walk 停止 | `±100` | `±80` |
+| WallCling 触发 | `±110` | `±90` |
+| Thrown 下 WallCling | `±200` | `±200` |
+
+并补全了 `GreetWait` / `ScanGreet` / `GreetAct` / `Eat` / `Sleep` / `PipiPlay` / `Laugh` 等新 Behavior 的 `WallClingLeft/Right` BehaviorReference（之前只加在 Stand/Walk 上）。
+
+---
+
+## Bug #5.3：`BorderType="Floor"` 加在 Walk / ScanMove 上 → `Lost Ground`
+
+### 现象
+
+日志频繁：
+
+```
+Lost Ground (mascot2, Action (ScanMove, ScanGreet))
+Lost Ground (mascot1, Action (Move, WalkRight))
+```
+
+两个角色走路或追向目标时会被强行切 `Fall`，互动动作被打断。
+
+### 根因
+
+- 多段任务栏拼出的 workArea 在 Shimeji 里是**多个独立 floor 矩形**，跨段时 anchor 会短暂不在任何一个 floor 上
+- 两个 mascot 的 "floor 集合" 是从各自 `environment` 构造的，互不同步
+- `BorderType="Floor"` 每 tick 调用 `FloorCeiling.isOn()`，一旦不在任一段 floor 上立即 `Lost Ground`
+- `ScanMove` 本身 `vy=0`，根本不需要地板检测
+
+### 修复
+
+`actions.xml` 中以下 Action **移除** `BorderType="Floor"`：
+
+- `WalkLeft` / `WalkRight`（ham + zhizhiji）
+- `ScanGreet`（zhizhiji）
+
+只在 `Stay` 类动作（`Stand`、`GreetAct`、`GreetWait`、`Laugh`、`Eat` 等）上保留 `BorderType="Floor"`。
+
+---
+
+## Bug #5.4：`ScanMove` 属性名拼写 — schema 读的是 `Behavior` 不是 `Behaviour`
+
+### 现象
+
+弹出对话框：
+
+```
+Failed to set behaviour. There is no corresponding behaviour ()
+```
+
+括号里行为名是空的。
+
+### 根因
+
+老 Shimeji 文档和源码常数里是 British 拼写 `Behaviour`，但实际跑的时候 `ScanMove` 调 `configuration.buildBehavior(param(behaviorName))` 读的 `behaviorName` 变量名来自 **English schema**（`conf/schema_en.properties`），映射的 key 是 American 拼写 `Behavior`。
+
+XML 里写 `Behaviour="GreetAct"` → schema 查不到 → 读到空字符串 → `buildBehavior("")` 失败。
+
+### 修复
+
+```xml
+<!-- 修复前 -->
+<Action Name="ScanGreet" ... Behaviour="GreetAct" TargetBehaviour="GreetReact" ...>
+
+<!-- 修复后 -->
+<Action Name="ScanGreet" ... Behavior="GreetAct" TargetBehavior="GreetReact" ...>
+```
+
+---
+
+## Bug #5.5：ScanGreet 方向反了 — `Pose.next()` 里 dx 被 `lookRight` 翻转
+
+### 现象
+
+用户肉眼看到 zhizhiji 在追 ham 的途中**往反方向走了一次**。日志上 `ScanGreet` 正常结束并进入 `GreetAct`，但中途方向是错的。
+
+### 根因
+
+看 `Pose.next()` 源码：
+
+```java
+mascot.setAnchor( new Point(
+    mascot.getAnchor().x + ( mascot.isLookRight() ? -getDx() : getDx() ),
+    ...
+));
+```
+
+`ScanMove.tick()` 每 tick 根据 `anchor.x vs TargetX` 动态 `setLookRight(...)`：
+
+- 目标在右 → `lookRight=true` → `Velocity="3,0"` 实际走 `-3`（向左！）
+- 目标在左 → `lookRight=false` → `Velocity="3,0"` 实际走 `+3`（向右！）
+
+两种情况方向**都反**。
+
+### 修复
+
+`ScanGreet` 的 `Velocity` 取**负数**，单 Animation 块，交给 `ScanMove` 的 `setLookRight` 自动翻转朝向：
+
+```xml
+<Pose Image="/walk_right_01.png" ImageAnchor="80,160" Velocity="-4,0" Duration="8"/>
+```
+
+- 目标在右 → `lookRight=true` → 走 `-(-4) = +4`（向右）✅
+- 目标在左 → `lookRight=false` → 走 `-4`（向左）✅
+
+---
+
+## Bug #5.6：GreetAct 后吱吱吉"一直后退" — `Animation.getPoseAt` 循环
+
+### 现象
+
+触发击掌后，zhizhiji 正确错开 ham 约 130px，但随后**每隔 2 秒**又跳走一次，最终离 ham 越来越远。
+
+### 根因
+
+`GreetAct` 配置：
+
+```xml
+<Action Name="GreetAct" Type="Stay" Duration="300">
+  <Animation>
+    <Pose Image="/laugh_01.png" Velocity="130,0" Duration="1"/>
+    <Pose Image="/laugh_01.png" Velocity="0,0"   Duration="50"/>
+  </Animation>
+</Action>
+```
+
+看 `Animation.getPoseAt(time)`：
+
+```java
+time %= getDuration();  // getDuration() = 所有 Pose.Duration 之和 = 51
+```
+
+Animation 总长 **51 tick**，但 Action 总长 **300 tick** → 每过 51 tick 动画 loop 回 pose1，又做一次 `Velocity="130,0"` 的位移。
+
+### 修复
+
+让 `Animation` 总长 > `Action.Duration`，第一个 Pose 只生效一次：
+
+```xml
+<Action Name="GreetAct" Type="Stay" Duration="300">
+  <Animation>
+    <Pose ... Velocity="130,0" Duration="2"/>
+    <Pose ... Velocity="0,0"   Duration="300"/>  <!-- 总长 302 > 300 -->
+  </Animation>
+</Action>
+```
+
+---
+
+## Bug #5.7：错开没生效又重叠了 — 新 Action 首帧 `getTime()=1` 不是 0
+
+### 现象
+
+修完 #5.6 之后发生退化：不再"一直后退"了，但 **130px 错开也完全没生效**，zhizhiji 再次和 ham 完全重叠。
+
+### 根因
+
+跟到 `Mascot.tick()`：
+
+```java
+getBehavior().next();          // ← 这里已经执行了 Stay.tick() / Pose.next() 一次
+setTime(getTime() + 1);        // ← 然后才 +1
+```
+
+而 `ActionBase.init()` 把 `startTime` 设为当前 `mascot.getTime()`；`getTime()` 减去 startTime 得到 Action 内相对时间。结果是**新 Action 的第一个生效 tick 对应相对时间 = 1**，不是 0。
+
+再看 `Animation.getPoseAt(1)`：
+
+```java
+time = 1
+for (Pose p : poses) {
+  time -= p.getDuration();
+  if (time < 0) return p;
+}
+```
+
+- pose1.Duration=1 → `time = 1 - 1 = 0`，**不满足 `< 0`**
+- 往下 pose2.Duration=300 → `time = 0 - 300 = -300 < 0` → 返回 pose2
+
+→ pose1 **被完全跳过**，`Velocity="130,0"` 从未应用。
+
+### 修复
+
+pose1 的 Duration 至少为 2（让 t=1 落在 pose1 范围内）：
+
+```xml
+<Pose ... Velocity="130,0" Duration="2"/>
+<Pose ... Velocity="0,0"   Duration="300"/>  <!-- 仍然 > Action.Duration -->
+```
+
+---
+
+## Bug #5.8：走路方向和图像朝向反了 — `ImagePair` flip 约定
+
+### 现象
+
+肉眼观察：zhizhiji 确实**向右**走（位置在变大、追向右侧 ham），但贴图是**朝左**的"walkleft"造型。
+
+### 根因
+
+吱吱吉素材命名和视觉方向**反直觉**：
+
+- `walk_right_*.png` 原图**实际画的是朝左**的吱吱吉
+- `walk_left_*.png` 原图**实际画的是朝右**的吱吱吉
+
+原因是早期素材是"蓝色背带面向画面左侧"这张，被命名为 walk_right（当时定义向右走画面朝左）。
+
+`ImagePairLoader.load()` 在 `rightPath` 未指定时，会把 `leftImage` 水平翻转生成 rightImage。`ImagePair.getImage(lookRight)` 则按 `lookRight` 选择原图 vs flip 版本。
+
+之前 ScanGreet 的两条件 Animation：
+
+- 目标在左（`lookRight=false`）：用 `walk_right_01.png` 原图（朝左） ✅
+- 目标在右（`lookRight=true`）：用 `walk_left_01.png` 原图（朝右），但 `lookRight=true` 会拿它的 **flip 版**（朝左）❌
+
+于是"往右走 → 显示 walkleft（朝左）"。
+
+### 修复
+
+单 Animation 块统一用 `walk_right_*.png`（原图朝左）：
+
+- `lookRight=false`（走向左侧目标）→ 用原图（朝左）✅
+- `lookRight=true`（走向右侧目标）→ 用 flip 版（朝右）✅
+
+```xml
+<Action Name="ScanGreet" ... TargetLook="true">
+  <Animation>
+    <Pose Image="/walk_right_01.png" ImageAnchor="80,160" Velocity="-4,0" Duration="8"/>
+    <Pose Image="/walk_right_02.png" ImageAnchor="80,160" Velocity="-4,0" Duration="8"/>
+    <Pose Image="/walk_right_03.png" ImageAnchor="80,160" Velocity="-4,0" Duration="8"/>
+    <Pose Image="/walk_right_04.png" ImageAnchor="80,160" Velocity="-4,0" Duration="8"/>
+  </Animation>
+</Action>
+```
+
+---
+
+## Bug #5 经验教训
+
+1. **属性名拼写跟 schema 走，不跟源码常数走**：`Behavior` / `TargetBehavior`（American）才是 XML 里正确写法。
+2. **EL 只懂 `&&` / `||`**：在 XML 里记得转义为 `&amp;&amp;`。
+3. **Move / ScanMove 不要挂 `BorderType="Floor"`**：多段 workArea + 跨 mascot 的 floor 差异会在 tick 之间频繁误报 Lost Ground。
+4. **边界阈值按实际 alpha 包围盒算**，不是画布宽。每次换素材重新测。
+5. **`Pose.next()` 会对 `lookRight` 做 dx 翻转**：`ScanMove` / 动态朝向的动作里 Velocity 取负更稳。
+6. **Animation 总长设计要考虑 `time %= totalDuration` 的循环**：一次性偏移必须放在 Σ Pose.Duration > Action.Duration 的 Animation 里，或者让那个 Pose 覆盖到结束。
+7. **新 Action 首帧 `getTime()=1`**：首个生效 Pose 的 Duration 至少为 2，否则会被跳过。
+8. **素材命名 ≠ 视觉朝向**：吱吱吉这套图是反的。单 Animation 块配合 `TargetLook="true"` + `setLookRight` 自动翻转最稳；写双分支 Animation 时务必确认每个分支的 `Pose Image` 对应的 flip 方向是要的那个。
+9. **调试手段**：`test_shimeji.ps1` + `watch_greet.ps1` 替代反复手动重启/肉眼盯屏，是这轮能闭环的前提。
+
+---
+
+## Bug #6：Walk 过程中直冲屏幕边 OOB，WallCling 跳不进去 <a id="bug-6"></a>
+
+### 现象
+
+ham / zhizhiji 在 `WalkLeft` 或 `WalkRight` 过程中频繁触发 `Out of the screen bounds`，而不是按设计转到 `WallClingLeft` / `WallClingRight`。日志里看到的典型时间线（120s 测试）：
+
+```
+Default Behavior(mascot2,Behavior(WalkLeft))
+Out of the screen bounds(mascot2,Behavior(WalkLeft))     ← 直接 OOB
+Default Behavior(mascot2,Behavior(Fall))
+Out of the screen bounds(mascot2,Behavior(Fall))
+```
+
+### 根因分析
+
+两个耦合的原因：
+
+1. **Walk Action 的 `Duration` 偏长，单次 Action 走的距离超过 Condition 与 workArea 边的间距。**
+
+   - 原 ham `WalkLeft` / `WalkRight` `Duration="175"`、Velocity dx = `-3` / `3`，一次 Action 连续走 `175 × 3 = 525px`。
+   - 原 ham `WalkLeft` `Condition="+150"`（`anchor.x > workArea.left + 150`），一次 `init` 校验通过后之后**不会再重新校验** → 走到 `anchor.x = 150 - 525 = -375`（远在屏幕外），才结束本次 Action。
+   - 在 Action 跑完前每一帧都要过 `UserBehavior.next()` 的 bounds 检查，bounds 超出屏幕 → 直接抛 OOB 事件，**压根走不到 Walk 结束后的 NextBehaviorList 判定**。
+
+2. **WallCling 触发 Condition 与 Walk 停止 Condition 不对齐。**
+
+   - 原 ham `WallClingLeft` Condition 是 `anchor.x < workArea.left + 110`。
+   - 原 ham `WalkLeft` 停止 Condition 是 `anchor.x > workArea.left + 150`。
+   - 两者之间有 40px 间隙，这段距离内 Walk 结束选 NextBehavior 时：`150` 不满足 `< +110`，`WallClingLeft` 候选被 Condition 过滤掉。
+
+### 修复
+
+核心思路：**缩短 Walk Duration 让单次步长可控**，再把 Walk 停止 Condition 推到一个"走完还不会 OOB 且 WallCling Condition 能接上"的位置。
+
+```xml
+<!-- img/ham/conf/actions.xml & img/Zhizhiji/conf/actions.xml -->
+<!-- Duration 60 = 60 frames × 3 px = 180px 步长 -->
+<Action Name="WalkLeft" Type="Move" BorderType="Floor" Duration="60">...</Action>
+<Action Name="WalkRight" Type="Move" BorderType="Floor" Duration="60">...</Action>
+```
+
+```xml
+<!-- img/ham/conf/behaviors.xml & img/Zhizhiji/conf/behaviors.xml -->
+<!-- Walk 停止阈值放到 ±300，预留一个完整步长的余量 -->
+<BehaviorReference Name="WalkLeft"
+    Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.left + 300}"/>
+<BehaviorReference Name="WalkRight"
+    Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.right - 300}"/>
+
+<!-- WallCling 触发阈值统一放到 ±130，和 "Walk 走完后可能落点" 相交 -->
+<BehaviorReference Name="WallClingLeft"  Frequency="9999"
+    Condition="#{mascot.anchor.x &lt; mascot.environment.workArea.left + 130}"/>
+<BehaviorReference Name="WallClingRight" Frequency="9999"
+    Condition="#{mascot.anchor.x &gt; mascot.environment.workArea.right - 130}"/>
+```
+
+阈值推导：
+
+- `Walk` 入口 Condition `> workArea.left + 300`，单次最大行走 180px → Action 结束时 `anchor.x ≥ 300 - 180 = 120 > workArea.left`（`anchor` 距画布左沿 80px，实际屏幕像素 `120 - 80 = 40 > 0`，不 OOB）。
+- `WallClingLeft` 入口 Condition `< workArea.left + 130`，且 Action 结束时 `anchor.x` 落点区间 `[120, 300]`，有部分落点（`[120, 130]`）能触发 WallCling。没触发的话还会回到 `Stand/StandRight`，下一轮重新摇号。
+- `Thrown` 的 `WallCling` Condition 保持 `±200`（比 Walk 路径更保守，防止被甩飞时错过）。
+
+### 验证
+
+180 秒自动化测试（`test_shimeji.ps1 -DurationSeconds 180`）日志统计：
+
+```
+Walk LG after init     : 0
+Stay LG after init     : 0
+ScanMove LG after init : 0
+Out Of Screen Bounds   : 2   ← 都是 Created a mascot 后 <100ms 的启动初始化副作用
+```
+
+没有一次 OOB 发生在 Walk 运行过程中。
+
+---
+
+## Bug #7：自动化日志统计总是 0 次 greet —— `conf/logging.properties` 默认 50KB 循环截断
+
+### 现象
+
+跑 `test_shimeji.ps1 -DurationSeconds 180`，`ShimejieeLog0.log` 才 ~3KB，分析脚本报告 `mascot created: 0 / GreetWait: 0 / ScanGreet: 0`，但屏幕上明显看到两个 mascot 正常活动甚至 greet。
+
+### 根因
+
+Shimeji 的 `Main.class.getResourceAsStream("/logging.properties")` 通过 Jar Manifest `Class-Path: ./ img/ conf/` 加载到 `conf/logging.properties`，默认：
+
+```properties
+java.util.logging.FileHandler.limit = 50000    # 50 KB
+java.util.logging.FileHandler.count = 1
+```
+
+`count=1` 时 Java `FileHandler` **不轮转**：`ShimejieeLog0.log` 写满 50KB 后会被**从头截断**覆盖。Shimeji 跑 1-2 分钟就超出 50KB，早期的 `Created a mascot` / `GreetWait` / `ScanGreet` 事件全部丢失，脚本当然统计不到。
+
+日志里 `<sequence>` 是 JVM 级累加计数器，截断不会重置。所以现象表现为：文件开头出现 `<sequence>515</sequence>`（而不是 0），中间缺失 1~514 条 record。
+
+### 踩坑修复
+
+- 尝试 1：`count=3`，`limit=20000000`。结果 `FileHandler` 检测到 `count>1` 自动把 pattern 末尾追加 `.%g`，文件名从 `ShimejieeLog0.log` 变成 `ShimejieeLog0.log.0` / `ShimejieeLog0.log.1` / `ShimejieeLog0.log.2` —— 统计脚本的 glob `ShimejieeLog*.log` 匹配不上，又扫不到日志。
+- 尝试 2（最终方案）：保持 `count=1`，只把 `limit` 放大到 `20000000` (20MB)。文件名维持 `ShimejieeLog0.log`，日志不再截断，足够几小时测试。
+
+```properties
+# runtime/shimejiee-local/shimejiee/conf/logging.properties
+java.util.logging.FileHandler.limit = 20000000
+java.util.logging.FileHandler.count = 1
+```
+
+### 配套脚本改动
+
+`test_shimeji.ps1`：
+
+1. 清理阶段：原本只 `Remove-Item ShimejieeLog0.log` 和 `ShimejieeLog1.log`，改成 glob `ShimejieeLog*.log` + `ShimejieeLog*.lck` 全清，避免 Java 轮转编号残留的老文件被误认为当次产物。
+2. 分析阶段：改成按 `LastWriteTime` 排序读所有 `ShimejieeLog*.log`，一并拼接后统计，兼容极端情况下的多文件。
+3. 增加 `read: <file> (<size> bytes)` 的诊断输出，调用者一眼能看出日志有没有掉。
+
+### 顺带澄清：`Frequency` 是加权轮盘，不是千分比
+
+`Configuration.buildBehavior()`：
+
+```java
+long totalFrequency = 0;
+for (each candidate) totalFrequency += candidate.getFrequency();
+double r = Math.random() * totalFrequency;
+for (each candidate) {
+    r -= candidate.getFrequency();
+    if (r < 0) return candidate.buildBehavior();
+}
+```
+
+所以 `Frequency="45"` 的 `ScanGreet` 并不是 4.5% 或 0.45%，它是与同级其它候选比的**相对权重**。以 zhi 的 `Stand` 状态为例：
+
+| 候选 | Frequency | 权重占比 |
+|------|-----------|----------|
+| ScanGreet | 45 | 45/156 ≈ 28.8% |
+| Stand | 35 | 22.4% |
+| WalkLeft / WalkRight | 20 + 20 | 25.6% |
+| Sleep / Eat / PipiPlay | 12 × 3 | 23.1% |
+| **合计** | **156** | 100% |
+
+真实 greet 命中率再乘上两层衰减：
+
+1. zhi 选中 ScanGreet 时 ham 必须正在 `GreetWait` 持 affordance，否则 `ScanMove` 空转丢单。
+2. zhi 在 `Fall` / `Dragged` / `Thrown` / `Sleep` / `Eat` / `PipiPlay` / `WallCling` 这些状态下切换时，`NextBehaviorList` 里都没有 `ScanGreet` 候选，这些切换对 greet 命中率"无贡献"。
+
+调参时别简单按 `Frequency / 1000` 估算概率。

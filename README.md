@@ -4,9 +4,12 @@
 
 ## 角色
 
-一只穿蓝色背带裤的可爱小老鼠 🐭，名叫**吱吱吉**（Zhizhiji）。
+- **吱吱吉**（Zhizhiji）：一只穿蓝色背带裤的可爱小老鼠 🐭
+- **ham**：一只躺平的粉色小猪 🐷，作为互动伙伴
 
 ## 动作状态
+
+### 吱吱吉
 
 | 状态 | 帧文件 | 说明 |
 |------|--------|------|
@@ -15,6 +18,30 @@
 | 向右走 | `walk_right_01~04.png` | 4 帧行走循环 |
 | 被拖拽 | `drag_01.png` | 被鼠标抓起时 |
 | 下落 | `fall_01.png` / `fall_02.png` | 空中下落 |
+| 贴墙 | `wall_cling_left.png` / `wall_cling_right.png` | 走到屏幕边界贴墙 |
+| 吃东西 | `eat_01~03.png` | 随机触发的小动作 |
+| 睡觉 | `sleep_01~02.png` | 随机触发的小动作 |
+| 玩屁屁 | `pipi_play_01~04.png` | 随机触发的小动作 |
+| 大笑（互动）| `laugh_01.png` | 遇到 ham 时触发 |
+
+### ham
+
+| 状态 | 帧文件 | 说明 |
+|------|--------|------|
+| 待机 | `idle_01.png` / `idle_02.png` | 躺平 |
+| 行走 | `walk_left_01~04.png` / `walk_right_01~04.png` | 匍匐前进 |
+| 贴墙 | `wall_cling_left.png` / `wall_cling_right.png` | 贴墙 |
+| 击掌（互动）| `greet_01.png` | 和吱吱吉相遇时触发 |
+
+## 相遇互动
+
+屏幕上**同时存在吱吱吉和 ham**（右键托盘图标召唤即可）时，两人会随机相遇并触发"击掌" 🎉：
+
+- ham 随机进入 `GreetWait` 等待被接近
+- 吱吱吉发现后会走过去，到达后两人贴近静态错开（不重叠）
+- 吱吱吉显示大笑（`laugh_01.png`），ham 抬手击掌（`greet_01.png`）
+
+实现细节和踩坑记录见 [`docs/behavior-logic.md`](./docs/behavior-logic.md)（Affordance 系统 & 实战约定）和 [`BUGFIX_LOG.md`](./BUGFIX_LOG.md) Bug #5。
 
 ## 文件说明
 
@@ -27,6 +54,10 @@
 | `output/` | 导出的成品 ZIP 包 |
 | `raw/` | 原始素材图片 |
 | `runtime/shimejiee-local/` | 本地可直接运行的 Shimeji-ee 环境 |
+| `docs/behavior-logic.md` | 行为机制详细说明、Affordance 系统、踩坑约定 |
+| `BUGFIX_LOG.md` / `CORE_FIX.md` | 全量 bug 排查过程 / 核心有效修复摘要 |
+| `test_shimeji.ps1` | 自动化测试：kill 旧进程→启动→观察→优雅退出→扫日志 |
+| `watch_greet.ps1` | 实时追日志直到"打招呼互动"触发 |
 
 ## 使用
 
