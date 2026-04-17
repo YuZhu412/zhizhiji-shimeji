@@ -13,7 +13,8 @@
         <BehaviorReference Name="WalkRight" Frequency="10"/>
         <BehaviorReference Name="Sleep"     Frequency="15"/>
         <BehaviorReference Name="Eat"       Frequency="15"/>
-        <BehaviorReference Name="Stand"     Frequency="50"/>
+        <BehaviorReference Name="PipiPlay"  Frequency="15"/>
+        <BehaviorReference Name="Stand"     Frequency="35"/>
       </NextBehaviorList>
     </Behavior>
 
@@ -28,7 +29,8 @@
         <BehaviorReference Name="WalkRight"  Frequency="10"/>
         <BehaviorReference Name="Sleep"      Frequency="15"/>
         <BehaviorReference Name="Eat"        Frequency="15"/>
-        <BehaviorReference Name="StandRight" Frequency="50"/>
+        <BehaviorReference Name="PipiPlay"   Frequency="15"/>
+        <BehaviorReference Name="StandRight" Frequency="35"/>
       </NextBehaviorList>
     </Behavior>
 
@@ -76,6 +78,14 @@
 
     <!-- 吃饭：播放完毕后回到 Stand/StandRight -->
     <Behavior Name="Eat" Frequency="0" Action="Eat">
+      <NextBehaviorList>
+        <BehaviorReference Name="Stand"      Frequency="50"/>
+        <BehaviorReference Name="StandRight" Frequency="50"/>
+      </NextBehaviorList>
+    </Behavior>
+
+    <!-- Pipi来玩：播放完毕后回到 Stand/StandRight -->
+    <Behavior Name="PipiPlay" Frequency="0" Action="PipiPlay">
       <NextBehaviorList>
         <BehaviorReference Name="Stand"      Frequency="50"/>
         <BehaviorReference Name="StandRight" Frequency="50"/>

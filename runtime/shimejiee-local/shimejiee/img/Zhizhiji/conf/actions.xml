@@ -62,6 +62,13 @@
       </Animation>
     </Action>
 
+    <!-- Pipi来玩：站立触发的随机互动动作，约1分钟（3600帧@60fps），宽帧320x160 -->
+    <Action Name="PipiPlay" Type="Stay" BorderType="Floor" Duration="3600">
+      <Animation>
+        <Pose Image="/pipi_play_01.png" ImageAnchor="160,160" Velocity="0,0" Duration="50"/>
+      </Animation>
+    </Action>
+
     <!-- 吃饭：站立触发的随机休闲动作，约1分钟（3600帧@60fps） -->
     <Action Name="Eat" Type="Stay" BorderType="Floor" Duration="3600">
       <Animation>
